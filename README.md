@@ -101,6 +101,8 @@ pytest
 
 ## Дополнительная документация
 
+- [CLI](docs/CLI.md)
+- [Batch](docs/BATCH.md)
 - [Inspector](docs/INSPECTOR.md)
 - [n8n](docs/N8N.md)
 
