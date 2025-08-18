@@ -1,59 +1,88 @@
-import importlib.util
+import importlib
 
-import requests
-
-from app.tools import health
+from app.net.http import NetworkError
 
 
-class DummyResp:
-    def __init__(self, data=None, status=200):
-        self._data = data or {}
-        self.status_code = status
+def load_health(monkeypatch, **env):
+    for key, value in env.items():
+        monkeypatch.setenv(key, value)
 
-    def json(self):
-        return self._data
+    import app.settings as settings_module
 
-    def raise_for_status(self):
-        pass
+    importlib.reload(settings_module)
+
+    import app.tools.health as health_module
+
+    importlib.reload(health_module)
+
+    return health_module
 
 
-def test_check_health(monkeypatch):
-    calls = {"get": 0, "post": 0}
+def base_env():
+    return {
+        "OPENROUTER_TEXT_MODEL": "vendor/text-model",
+        "OPENROUTER_IMAGE_MODEL": "vendor/image-model",
+        "ANKI_DECK": "deck",
+        "TELEGRAM_BOT_TOKEN": "token",
+        "ANKI_CONNECT_URL": "http://anki",
+    }
 
-    def fake_get(url, headers=None, timeout=None):
-        calls["get"] += 1
-        return DummyResp()
 
-    def fake_post(url, json=None, timeout=None):
-        calls["post"] += 1
-        return DummyResp({"result": "2.1.0", "error": None})
+def test_check_health_success(monkeypatch):
+    env = base_env()
+    env["OPENROUTER_API_KEY"] = "sk-or-v1-abc"
+    health = load_health(monkeypatch, **env)
 
-    monkeypatch.setenv("OPENROUTER_API_KEY", "k")
-    monkeypatch.setenv("OPENROUTER_TEXT_MODEL", "m-text")
-    monkeypatch.setenv("OPENROUTER_IMAGE_MODEL", "m-img")
-    monkeypatch.setenv("ANKI_CONNECT_URL", "http://anki")
-    monkeypatch.setattr(requests, "get", fake_get)
-    monkeypatch.setattr(requests, "post", fake_post)
-    monkeypatch.setattr(importlib.util, "find_spec", lambda name: object())
+    def fake_request_json(method, url, json=None, headers=None, timeout=None):
+        return {"result": 6}
 
-    # сброс кеша
-    health._last_result = None
-    health._last_checked = 0.0
+    monkeypatch.setattr(health, "request_json", fake_request_json)
 
-    res1 = health.check_health()
-    assert res1["openrouter_text"]["status"] == "ok"
-    assert res1["openrouter_text"]["message"] == "m-text"
-    assert res1["openrouter_image"]["status"] == "ok"
-    assert res1["openrouter_image"]["message"] == "m-img"
-    assert res1["anki"]["status"] == "ok"
-    assert res1["anki"]["message"] == "2.1.0"
-    assert res1["tts"]["status"] == "ok"
+    assert health.check_health() == {
+        "openrouter_text": {
+            "ok": True,
+            "model": env["OPENROUTER_TEXT_MODEL"],
+            "error": None,
+        },
+        "openrouter_image": {
+            "ok": True,
+            "model": env["OPENROUTER_IMAGE_MODEL"],
+            "error": None,
+        },
+        "anki": {"ok": True, "error": None},
+    }
 
-    assert calls["get"] == 2
-    assert calls["post"] == 1
 
-    # повторный вызов использует кеш
-    res2 = health.check_health()
-    assert calls["get"] == 2
-    assert calls["post"] == 1
-    assert res2 == res1
+def test_check_health_anki_error(monkeypatch):
+    env = base_env()
+    env["OPENROUTER_API_KEY"] = "sk-or-v1-abc"
+    health = load_health(monkeypatch, **env)
+
+    def fake_request_json(*args, **kwargs):
+        raise NetworkError("network", "boom")
+
+    monkeypatch.setattr(health, "request_json", fake_request_json)
+
+    result = health.check_health()
+
+    assert result["anki"]["ok"] is False
+    assert "boom" in result["anki"]["error"]
+
+
+def test_check_health_invalid_openrouter(monkeypatch):
+    env = base_env()
+    env["OPENROUTER_API_KEY"] = "badkey"
+    health = load_health(monkeypatch, **env)
+
+    def fake_request_json(method, url, json=None, headers=None, timeout=None):
+        return {"result": 6}
+
+    monkeypatch.setattr(health, "request_json", fake_request_json)
+
+    result = health.check_health()
+
+    assert result["openrouter_text"]["ok"] is False
+    assert result["openrouter_text"]["error"] == "invalid OPENROUTER_API_KEY"
+    assert result["openrouter_image"]["ok"] is False
+    assert result["anki"]["ok"] is True
+
