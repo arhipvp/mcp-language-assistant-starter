@@ -22,9 +22,10 @@ def test_make_card_happy_path(monkeypatch):
     fake_anki.add_anki_note = lambda **kwargs: 123
     monkeypatch.setitem(sys.modules, "app.mcp_tools.anki", fake_anki)
 
-    from app.mcp_tools.lesson import make_card
+    import importlib
+    lesson = importlib.reload(importlib.import_module("app.mcp_tools.lesson"))
 
-    result = make_card("Hund", "de", "Deck", "tag")
+    result = lesson.make_card("Hund", "de", "Deck", "tag")
 
     assert set(result) == {"note_id", "front", "back", "image"}
     assert result["note_id"] == 123
