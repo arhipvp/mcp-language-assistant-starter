@@ -1,14 +1,13 @@
 import base64
 import os
+import base64
+import os
 import time
 from typing import Any, List, Optional
 
 import requests
-from dotenv import load_dotenv
 
-load_dotenv()
-
-ANKI_CONNECT_URL = os.getenv("ANKI_CONNECT_URL", "http://127.0.0.1:8765")
+from app.settings import settings
 
 
 def _invoke(action: str, **params) -> Any:
@@ -16,7 +15,7 @@ def _invoke(action: str, **params) -> Any:
     payload = {"action": action, "version": 6, "params": params}
     for attempt in range(3):
         try:
-            resp = requests.post(ANKI_CONNECT_URL, json=payload, timeout=30)
+            resp = requests.post(settings.ANKI_CONNECT_URL, json=payload, timeout=30)
             resp.raise_for_status()
             out = resp.json()
             if out.get("error"):

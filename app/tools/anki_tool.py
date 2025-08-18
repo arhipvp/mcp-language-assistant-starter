@@ -1,10 +1,10 @@
 import os
 import requests
 from typing import List, Optional
-from dotenv import load_dotenv
 
-load_dotenv()
-ANKI_URL = os.getenv("ANKI_CONNECT_URL", "http://127.0.0.1:8765")
+from app.settings import settings
+
+ANKI_URL = settings.ANKI_CONNECT_URL
 
 
 def _invoke(action: str, **params):

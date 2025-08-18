@@ -1,29 +1,18 @@
 """Simple wrapper around OpenRouter chat completions."""
 from __future__ import annotations
 
-import os
 import time
 from typing import Dict, List, Optional
 
 import requests
-from dotenv import load_dotenv
 
-load_dotenv()
+from app.settings import settings
 
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
 class OpenRouterError(RuntimeError):
     """Raised when interaction with OpenRouter fails."""
-
-
-def _get_env(key: str) -> str:
-    value = os.getenv(key)
-    if not value:
-        raise OpenRouterError(f"Environment variable {key} is not set")
-    return value
-
-
 def chat(
     messages: List[Dict],
     model: Optional[str] = None,
@@ -43,9 +32,9 @@ def chat(
         OpenRouterError: If configuration is missing or the request fails.
     """
 
-    api_key = _get_env("OPENROUTER_API_KEY")
+    api_key = settings.OPENROUTER_API_KEY
     if model is None:
-        model = _get_env("OPENROUTER_TEXT_MODEL")
+        model = settings.OPENROUTER_TEXT_MODEL
 
     headers = {"Authorization": f"Bearer {api_key}"}
     payload = {"model": model, "max_tokens": max_tokens, "messages": messages}

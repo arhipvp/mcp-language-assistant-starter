@@ -1,18 +1,13 @@
 from __future__ import annotations
 
 import base64
-import os
 import time
 from pathlib import Path
 from typing import Any
 
 import requests
-from dotenv import load_dotenv
 
-# --- env / config ---
-load_dotenv()
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-OPENROUTER_IMAGE_MODEL = os.getenv("OPENROUTER_IMAGE_MODEL", "")
+from app.settings import settings
 IMAGES_URL = "https://openrouter.ai/api/v1/images"
 
 MEDIA_DIR = Path("media")
@@ -33,12 +28,12 @@ def generate_image_file(sentence_de: str) -> str:
     Reads OPENROUTER_API_KEY and OPENROUTER_IMAGE_MODEL from environment (.env supported).
     Returns absolute/relative file path on success, or an empty string on failure.
     """
-    if not OPENROUTER_API_KEY or not OPENROUTER_IMAGE_MODEL:
+    if not settings.OPENROUTER_API_KEY or not settings.OPENROUTER_IMAGE_MODEL:
         return ""
 
-    headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}"}
+    headers = {"Authorization": f"Bearer {settings.OPENROUTER_API_KEY}"}
     payload: dict[str, Any] = {
-        "model": OPENROUTER_IMAGE_MODEL,
+        "model": settings.OPENROUTER_IMAGE_MODEL,
         "prompt": _build_prompt(sentence_de),
     }
 

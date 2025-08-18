@@ -2,6 +2,7 @@ import typer
 from typing import Optional
 
 from .orchestration.pipeline import LessonConfig, build_lesson
+from .settings import settings  # noqa: F401  - trigger config loading
 
 app = typer.Typer(help="MCP Language Assistant CLI")
 

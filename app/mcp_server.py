@@ -22,6 +22,7 @@ from .tools.tts import speak_to_file
 from .tools.anki_tool import add_basic_note
 from .orchestration.pipeline import LessonConfig, build_lesson
 from .mcp_tools.lesson import make_card as make_lesson_card
+from .settings import settings  # noqa: F401  - trigger config loading
 
 
 def lesson_make_card(word: str, lang: str, deck: str, tag: str) -> dict:

@@ -1,12 +1,10 @@
 """Text-related MCP tools."""
 from __future__ import annotations
 
-import os
 import time
 from typing import Any, Dict, List
 
 import requests
-from dotenv import load_dotenv
 
 # ── optional local provider (preferred if present) ────────────────────────────
 try:  # pragma: no cover - optional dependency
@@ -15,9 +13,8 @@ except Exception:  # pragma: no cover
     llm_text = None  # type: ignore
 
 # ── env / config for OpenRouter fallback ─────────────────────────────────────
-load_dotenv()
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-OPENROUTER_TEXT_MODEL = os.getenv("OPENROUTER_TEXT_MODEL", "")
+from app.settings import settings
+
 CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 SYSTEM_PROMPT = (
@@ -71,11 +68,11 @@ def _extract_content(resp: Any) -> str:
 
 def _chat_openrouter(messages: List[dict]) -> str:
     """Fallback chat via OpenRouter with retries."""
-    if not OPENROUTER_API_KEY or not OPENROUTER_TEXT_MODEL:
-        raise RuntimeError("OpenRouter is not configured (OPENROUTER_API_KEY/TEXT_MODEL).")
+    api_key = settings.OPENROUTER_API_KEY
+    model = settings.OPENROUTER_TEXT_MODEL
 
-    headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}"}
-    payload = {"model": OPENROUTER_TEXT_MODEL, "messages": messages}
+    headers = {"Authorization": f"Bearer {api_key}"}
+    payload = {"model": model, "messages": messages}
 
     for attempt in range(3):
         try:
