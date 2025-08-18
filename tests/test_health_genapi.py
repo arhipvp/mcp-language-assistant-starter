@@ -9,7 +9,7 @@ def _cfg():
         GENAPI_MODEL_ID="m",
         GENAPI_SIZE="1024x1024",
         GENAPI_QUALITY="low",
-        GENAPI_OUTPUT_FORMAT="png",
+        GENAPI_BACKGROUND="transparent",
         GENAPI_CALLBACK_URL=None,
     )
 

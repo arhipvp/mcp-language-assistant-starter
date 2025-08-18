@@ -12,7 +12,8 @@ import requests
 
 from app.settings import settings
 
-IMAGES_URL = "https://api.gen-api.ru/v1/images"
+# endpoint согласно документации GPT Images API
+IMAGES_URL = "https://api.gen-api.ru/v1/images/generate"
 
 MEDIA_DIR = Path("media")
 MEDIA_DIR.mkdir(exist_ok=True)
@@ -46,12 +47,10 @@ def generate_image_file(sentence_de: str) -> str:
         "prompt": _build_prompt(sentence_de),
         "size": settings.GENAPI_SIZE,
         "quality": settings.GENAPI_QUALITY,
-        "output_format": settings.GENAPI_OUTPUT_FORMAT,
+        "background": settings.GENAPI_BACKGROUND,
+        "response_format": "b64_json",
         "n": 1,
-        "sync": settings.GENAPI_IS_SYNC,
     }
-    if settings.GENAPI_CALLBACK_URL is not None:
-        payload["callback_url"] = settings.GENAPI_CALLBACK_URL
 
     try:
         resp = requests.post(IMAGES_URL, headers=headers, json=payload, timeout=60)
