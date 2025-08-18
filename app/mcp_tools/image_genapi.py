@@ -22,6 +22,16 @@ MEDIA_DIR.mkdir(exist_ok=True)
 
 logger = logging.getLogger(__name__)
 
+_EXT_TO_MIME = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}
+
+
+def _guess_mime_from_bytes(data: bytes) -> str | None:
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data.startswith(b"\xff\xd8"):
+        return "image/jpeg"
+    return None
+
 
 def _env_int(name: str, default: int) -> int:
     try:
@@ -81,8 +91,23 @@ def _save_image(kind: str, data: str, out_path: Path) -> str:
         return ""
 
 
-def generate_image_file_genapi(sentence_de: str) -> str:
-    """Generate an image via GenAPI. Return local file path or empty string."""
+def generate_image_file_genapi(
+    sentence_de: str,
+    ref_image: str | bytes | None = None,
+    ref_kind: str | None = None,
+) -> str:
+    """
+    Generate an image via GenAPI. Return local file path or empty string.
+
+    Parameters
+    ----------
+    ref_image:
+        - str: local path or http(s) URL
+        - bytes: file content (will be encoded to base64)
+        - None: no reference
+    ref_kind: optional hint to force type ('path' | 'url' | 'b64')
+    """
+
     model_id = os.environ.get("GENAPI_MODEL_ID")
     if not model_id or create_generation_task is None or get_task_status is None:
         return ""
@@ -102,6 +127,61 @@ def generate_image_file_genapi(sentence_de: str) -> str:
     kwargs: Dict[str, Any] = {"model_id": model_id, "prompt": prompt, "is_sync": is_sync}
     if callback_url:
         kwargs["callback_url"] = callback_url
+
+    # reference image handling
+    ref_payload: Dict[str, str] = {}
+    if ref_image is not None:
+        allowed_types = {
+            t.strip() for t in os.environ.get("GENAPI_ALLOWED_IMAGE_TYPES", "").split(",") if t.strip()
+        }
+        max_bytes = _env_int("GENAPI_REF_IMAGE_MAX_BYTES", 0)
+
+        kind = ref_kind
+        if isinstance(ref_image, str) and not kind:
+            if ref_image.startswith("http://") or ref_image.startswith("https://"):
+                kind = "url"
+            elif os.path.isfile(ref_image):
+                kind = "path"
+        if isinstance(ref_image, bytes):
+            kind = "b64"
+
+        if kind == "url" and isinstance(ref_image, str):
+            ref_payload["image_url"] = ref_image
+        elif kind == "path" and isinstance(ref_image, str):
+            if not os.path.isfile(ref_image):
+                logger.warning("Reference image path not found: %s", ref_image)
+            else:
+                size = os.path.getsize(ref_image)
+                if max_bytes and size > max_bytes:
+                    logger.warning("Reference image too large: %s", size)
+                    return ""
+                mime = _EXT_TO_MIME.get(Path(ref_image).suffix.lower())
+                if allowed_types and mime not in allowed_types:
+                    # try signature for better guess
+                    try:
+                        with open(ref_image, "rb") as fh:
+                            mime = _guess_mime_from_bytes(fh.read(8))
+                    except Exception:
+                        mime = None
+                if allowed_types and mime not in allowed_types:
+                    logger.warning("Unsupported reference image type: %s", mime)
+                    return ""
+                ref_payload["image_path"] = ref_image
+        elif kind == "b64":
+            data = ref_image if isinstance(ref_image, bytes) else base64.b64decode(ref_image)
+            size = len(data)
+            if max_bytes and size > max_bytes:
+                logger.warning("Reference image too large: %s", size)
+                return ""
+            mime = _guess_mime_from_bytes(data)
+            if allowed_types and mime not in allowed_types:
+                logger.warning("Unsupported reference image type: %s", mime)
+                return ""
+            ref_payload["image_b64"] = base64.b64encode(data).decode()
+        else:
+            logger.warning("Unsupported reference image input")
+
+    kwargs.update(ref_payload)
 
     try:
         resp = create_generation_task(**kwargs)  # type: ignore[misc]
