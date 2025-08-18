@@ -3,13 +3,7 @@ from __future__ import annotations
 import os
 import re
 from typing import Dict, Optional
-
-# Основные инструменты импортируются внутри функции `make_card`
-# чтобы тесты могли подменять модули через `sys.modules` без перезагрузки.
-generate_sentence = None  # type: ignore[assignment]
-translate_text = None  # type: ignore[assignment]
-generate_image_file = None  # type: ignore[assignment]
-add_anki_note = None  # type: ignore[assignment]
+import importlib
 
 # Для грубого детекта кириллицы
 _CYRILLIC_RE = re.compile(r"[\u0400-\u04FF]")
@@ -33,16 +27,14 @@ def make_card(
 
     Если картинка не сгенерировалась — карточка всё равно создаётся.
     """
-    import importlib
-
+    # Динамические импорты, чтобы тесты могли подменять модули через sys.modules
     text_mod = importlib.import_module("app.mcp_tools.text")
     image_mod = importlib.import_module("app.mcp_tools.image")
     anki_mod = importlib.import_module("app.mcp_tools.anki")
 
-    gen_sentence = generate_sentence or text_mod.generate_sentence
-    translate = translate_text or text_mod.translate_text
-    gen_image = generate_image_file or image_mod.generate_image_file
-    add_note = add_anki_note or anki_mod.add_anki_note
+    gen_sentence = getattr(text_mod, "generate_sentence")
+    translate = getattr(text_mod, "translate_text")
+    add_note = getattr(anki_mod, "add_anki_note")
 
     # 1) Определяем язык входа
     in_lang = (lang or "").strip().lower() or _detect_lang(word)
@@ -61,7 +53,14 @@ def make_card(
     translation_ru = translate(sentence_de, "de", "ru")
 
     # 5) Пытаемся сгенерировать картинку (может вернуть пустую строку)
-    img_path = gen_image(sentence_de) or ""
+    provider = os.getenv("IMAGE_PROVIDER", "openrouter").strip().lower()
+    if provider == "genapi" and hasattr(image_mod, "generate_image_file_genapi"):
+        img_path = image_mod.generate_image_file_genapi(sentence_de) or ""
+    elif provider == "none":
+        img_path = ""
+    else:  # по умолчанию — openrouter (или неизвестный провайдер)
+        gen_image = getattr(image_mod, "generate_image_file")
+        img_path = gen_image(sentence_de) or ""
 
     # 6) Формируем Back (без <img>; его пришьёт add_anki_note, если media_path передан)
     back_html = (

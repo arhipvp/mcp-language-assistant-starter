@@ -3,7 +3,11 @@ from __future__ import annotations
 from typing import List
 
 from app.net.http import NetworkError, request_json
-from app.settings import settings
+from importlib import reload
+import app.settings as app_settings
+
+# Получаем актуальные настройки при каждом импорте модуля
+settings = reload(app_settings).settings
 
 CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
 
