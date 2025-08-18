@@ -1,0 +1,142 @@
+{
+  "name": "Word to Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "word",
+        "method": "POST",
+        "responseMode": "onReceived"
+      },
+      "id": "1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.MCP_BASE_URL}}/word",
+        "responseFormat": "json",
+        "jsonParameters": true,
+        "bodyParametersJson": "={\"word\": $json[\"word\"]}"
+      },
+      "id": "2",
+      "name": "MCP Lookup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"image\"]}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "3",
+      "name": "Has image?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "123456789",
+        "photo": "={{$json[\"image\"]}}",
+        "additionalFields": {
+          "caption": "={{$json[\"text\"]}}"
+        }
+      },
+      "id": "4",
+      "name": "Send Photo",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        850,
+        200
+      ],
+      "credentials": {
+        "telegramApi": {
+          "apiToken": "={{$env.TELEGRAM_BOT_TOKEN}}"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "123456789",
+        "text": "={{$json[\"text\"]}}",
+        "additionalFields": {}
+      },
+      "id": "5",
+      "name": "Send Text",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        850,
+        400
+      ],
+      "credentials": {
+        "telegramApi": {
+          "apiToken": "={{$env.TELEGRAM_BOT_TOKEN}}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "MCP Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Lookup": {
+      "main": [
+        [
+          {
+            "node": "Has image?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has image?": {
+      "main": [
+        [
+          {
+            "node": "Send Photo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

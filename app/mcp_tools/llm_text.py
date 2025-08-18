@@ -2,25 +2,21 @@
 from __future__ import annotations
 
 import os
-import time
 from typing import Dict, List, Optional
 
-import requests
 from dotenv import load_dotenv
+
+from app.net.http import NetworkError, request_json
 
 load_dotenv()
 
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
-class OpenRouterError(RuntimeError):
-    """Raised when interaction with OpenRouter fails."""
-
-
 def _get_env(key: str) -> str:
     value = os.getenv(key)
     if not value:
-        raise OpenRouterError(f"Environment variable {key} is not set")
+        raise NetworkError("config", f"Environment variable {key} is not set")
     return value
 
 
@@ -40,7 +36,7 @@ def chat(
         The generated text from the first choice.
 
     Raises:
-        OpenRouterError: If configuration is missing or the request fails.
+        NetworkError: If configuration is missing or the request fails.
     """
 
     api_key = _get_env("OPENROUTER_API_KEY")
@@ -50,16 +46,5 @@ def chat(
     headers = {"Authorization": f"Bearer {api_key}"}
     payload = {"model": model, "max_tokens": max_tokens, "messages": messages}
 
-    delays = [0.5, 1, 2]
-    for attempt in range(len(delays) + 1):
-        try:
-            response = requests.post(
-                API_URL, json=payload, headers=headers, timeout=20
-            )
-            response.raise_for_status()
-            data = response.json()
-            return data["choices"][0]["message"]["content"]
-        except Exception as exc:  # noqa: BLE001
-            if attempt == len(delays):
-                raise OpenRouterError(f"OpenRouter API request failed: {exc}") from None
-            time.sleep(delays[attempt])
+    data = request_json("POST", API_URL, json=payload, headers=headers, timeout=20)
+    return data["choices"][0]["message"]["content"]
