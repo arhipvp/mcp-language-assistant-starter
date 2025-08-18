@@ -23,6 +23,17 @@ from .tools.anki_tool import add_basic_note
 from .orchestration.pipeline import LessonConfig, build_lesson
 
 
+def lesson_make_card(word: str, lang: str, deck: str, tag: str) -> dict:
+    """Create a flashcard for a word.
+
+    This thin wrapper delegates to :func:`app.mcp_tools.lesson.make_card` to
+    generate an Anki card for the given word.
+    """
+    from app.mcp_tools.lesson import make_card
+
+    return make_card(word, lang, deck, tag)
+
+
 def create_server() -> "Server":  # type: ignore[return-type]
     """Create the MCP server and register all tools."""
     if Server is None:
@@ -55,6 +66,10 @@ def create_server() -> "Server":  # type: ignore[return-type]
         cfg = LessonConfig(url=url, deck=deck, tag=tag, limit=limit)
         return build_lesson(cfg)
 
+    @server.tool("lesson.make_card")
+    async def lesson_make_card_tool(word: str, lang: str, deck: str, tag: str) -> dict:
+        return lesson_make_card(word, lang, deck, tag)
+
     return server
 
 
@@ -71,6 +86,10 @@ def list_tools() -> Dict[str, dict]:
         },
         "lesson.build": {
             "args": ["url: str", "deck: str", "tag: str='auto'", "limit: int=15"],
+            "returns": "dict",
+        },
+        "lesson.make_card": {
+            "args": ["word: str", "lang: str", "deck: str", "tag: str"],
             "returns": "dict",
         },
     }
