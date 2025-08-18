@@ -1,12 +1,19 @@
 import os
 from typing import List, Optional
 
+
+from app.settings import settings
+
+ANKI_URL = settings.ANKI_CONNECT_URL
+
+
 from dotenv import load_dotenv
 
 from app.net.http import NetworkError, request_json
 
 load_dotenv()
 ANKI_URL = os.getenv("ANKI_CONNECT_URL", "http://127.0.0.1:8765")
+
 
 
 def _invoke(action: str, **params):

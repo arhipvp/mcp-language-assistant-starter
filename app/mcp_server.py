@@ -23,7 +23,11 @@ from .tools.anki_tool import add_basic_note
 from .tools.health import check_health
 from .orchestration.pipeline import LessonConfig, build_lesson
 from .mcp_tools.lesson import make_card as make_lesson_card
+
+from .settings import settings  # noqa: F401  - trigger config loading
+
 from .tool_logging import log_tool
+
 
 
 def lesson_make_card(word: str, lang: str, deck: str, tag: str) -> dict:

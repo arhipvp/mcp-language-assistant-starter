@@ -1,10 +1,7 @@
 """Text-related MCP tools."""
 from __future__ import annotations
 
-import os
 from typing import Any, Dict, List
-
-from dotenv import load_dotenv
 
 from app.net.http import NetworkError, request_json
 
@@ -15,9 +12,8 @@ except Exception:  # pragma: no cover
     llm_text = None  # type: ignore
 
 # ── env / config for OpenRouter fallback ─────────────────────────────────────
-load_dotenv()
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-OPENROUTER_TEXT_MODEL = os.getenv("OPENROUTER_TEXT_MODEL", "")
+from app.settings import settings
+
 CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 SYSTEM_PROMPT = (
@@ -70,16 +66,19 @@ def _extract_content(resp: Any) -> str:
 
 
 def _chat_openrouter(messages: List[dict]) -> str:
-    """Fallback chat via OpenRouter with retries."""
-    if not OPENROUTER_API_KEY or not OPENROUTER_TEXT_MODEL:
-        raise NetworkError(
-            "config",
-            "OpenRouter is not configured",
-            {"missing": ["OPENROUTER_API_KEY", "OPENROUTER_TEXT_MODEL"]},
-        )
+    """Fallback chat via OpenRouter."""
+    api_key = settings.OPENROUTER_API_KEY
+    model = settings.OPENROUTER_TEXT_MODEL
+    missing = []
+    if not api_key:
+        missing.append("OPENROUTER_API_KEY")
+    if not model:
+        missing.append("OPENROUTER_TEXT_MODEL")
+    if missing:
+        raise NetworkError("config", "OpenRouter is not configured", {"missing": missing})
 
-    headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}"}
-    payload = {"model": OPENROUTER_TEXT_MODEL, "messages": messages}
+    headers = {"Authorization": f"Bearer {api_key}"}
+    payload = {"model": model, "messages": messages}
 
     data = request_json("POST", CHAT_URL, headers=headers, json=payload, timeout=30)
     return _extract_content(data).strip()

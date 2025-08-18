@@ -1,10 +1,8 @@
 
 from typing import List, Dict
-import os, requests
-from dotenv import load_dotenv
+import requests
 
-load_dotenv()
-LT_URL = os.getenv("LANGUAGETOOL_URL", "http://localhost:8010")
+LT_URL = "http://localhost:8010"
 
 def check_text(text: str, language: str = "de") -> List[Dict]:
     try:

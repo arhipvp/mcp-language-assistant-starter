@@ -1,22 +1,19 @@
 from __future__ import annotations
 
 import asyncio
-import os
 import re
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import Application, MessageHandler, ContextTypes, filters
 
 from app.mcp_tools.lesson import make_card
+from app.settings import settings
 
-load_dotenv()
-
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
-DECK = os.getenv("ANKI_DECK", "")
-TAG = os.getenv("ANKI_TAG", "tg-auto")
+TOKEN = settings.TELEGRAM_BOT_TOKEN
+DECK = settings.ANKI_DECK
+TAG = settings.ANKI_TAG
 
 _CYRILLIC_RE = re.compile(r"[\u0400-\u04FF]")
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
@@ -72,11 +69,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await update.message.reply_text(f"Ошибка: {e}")
 
 def main() -> None:
-    if not TOKEN:
-        raise RuntimeError("TELEGRAM_BOT_TOKEN не задан в .env")
-    if not DECK:
-        raise RuntimeError("ANKI_DECK не задан в .env")
-
     app = Application.builder().token(TOKEN).build()
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     app.run_polling()

@@ -1,22 +1,20 @@
+from __future__ import annotations
+
 import base64
 import os
 from typing import Any, List, Optional
 
-from dotenv import load_dotenv
-
 from app.net.http import NetworkError, request_json
-
-load_dotenv()
-
-ANKI_CONNECT_URL = os.getenv("ANKI_CONNECT_URL", "http://127.0.0.1:8765")
+from app.settings import settings
 
 
 def _invoke(action: str, **params) -> Any:
-    """Вызов метода AnkiConnect с экспоненциальным бэкоффом."""
+    """Вызов метода AnkiConnect через общий HTTP-слой."""
     payload = {"action": action, "version": 6, "params": params}
-    out = request_json("POST", ANKI_CONNECT_URL, json=payload, timeout=30)
+    out = request_json("POST", settings.ANKI_CONNECT_URL, json=payload, timeout=30)
     if out.get("error"):
-        raise NetworkError("anki-error", out["error"])
+        # единый формат сетевых ошибок
+        raise NetworkError("anki-error", out["error"], {"action": action})
     return out.get("result")
 
 

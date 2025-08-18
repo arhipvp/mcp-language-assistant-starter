@@ -13,19 +13,9 @@ vocabulary is outside the sample list.
 from __future__ import annotations
 
 import csv
-import os
 import re
 from pathlib import Path
 from typing import Dict, List
-
-# Optional translation via DeepL if an API key is supplied.  This keeps the
-# function offline by default but allows richer cards when credentials are
-# present in ``.env``.
-import requests
-from dotenv import load_dotenv
-
-load_dotenv()
-DEEPL_API_KEY = os.getenv("DEEPL_API_KEY")
 
 _CEFR_CACHE: Dict[str, Dict[str, str]] | None = None
 
@@ -64,20 +54,12 @@ def _lookup(word: str) -> Dict[str, str]:
 
 
 def _translate(term: str) -> str:
-    """Translate term to English using DeepL if available."""
-    if not DEEPL_API_KEY:
-        return ""
-    try:
-        resp = requests.post(
-            "https://api-free.deepl.com/v2/translate",
-            data={"auth_key": DEEPL_API_KEY, "text": term, "target_lang": "EN"},
-            timeout=15,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        return data["translations"][0]["text"]
-    except Exception:
-        return ""
+    """Translate term to English (placeholder).
+
+    The project no longer uses external translators by default, so this
+    function simply returns an empty string.
+    """
+    return ""
 
 
 def extract_vocab(text: str, limit: int = 20) -> List[Dict[str, str]]:
