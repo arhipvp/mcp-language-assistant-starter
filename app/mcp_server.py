@@ -20,6 +20,7 @@ from .tools.cefr_level import extract_vocab
 from .tools.grammar import check_text
 from .tools.tts import speak_to_file
 from .tools.anki_tool import add_basic_note
+from .tools.health import check_health
 from .orchestration.pipeline import LessonConfig, build_lesson
 from .mcp_tools.lesson import make_card as make_lesson_card
 from .tool_logging import log_tool
@@ -70,6 +71,10 @@ def create_server() -> "Server":  # type: ignore[return-type]
         # единая точка вызова для создания карточки
         return make_lesson_card(word, lang, deck, tag)
 
+    @server.tool("server.health")
+    async def server_health() -> dict:
+        return check_health()
+
     return server
 
 
@@ -92,6 +97,7 @@ def list_tools() -> Dict[str, dict]:
             "args": ["word: str", "lang: str", "deck: str", "tag: str"],
             "returns": "dict",
         },
+        "server.health": {"args": [], "returns": "dict"},
     }
 
 
