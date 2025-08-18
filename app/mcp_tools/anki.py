@@ -1,10 +1,10 @@
 import base64
 import os
-import time
 from typing import Any, List, Optional
 
-import requests
 from dotenv import load_dotenv
+
+from app.net.http import NetworkError, request_json
 
 load_dotenv()
 
@@ -12,21 +12,12 @@ ANKI_CONNECT_URL = os.getenv("ANKI_CONNECT_URL", "http://127.0.0.1:8765")
 
 
 def _invoke(action: str, **params) -> Any:
-    """Вызов метода AnkiConnect с 3 попытками и экспоненциальной паузой."""
+    """Вызов метода AnkiConnect с экспоненциальным бэкоффом."""
     payload = {"action": action, "version": 6, "params": params}
-    for attempt in range(3):
-        try:
-            resp = requests.post(ANKI_CONNECT_URL, json=payload, timeout=30)
-            resp.raise_for_status()
-            out = resp.json()
-            if out.get("error"):
-                raise RuntimeError(out["error"])
-            return out.get("result")
-        except Exception:
-            if attempt == 2:
-                raise
-            time.sleep(2**attempt)
-    raise RuntimeError("Anki invocation failed")
+    out = request_json("POST", ANKI_CONNECT_URL, json=payload, timeout=30)
+    if out.get("error"):
+        raise NetworkError("anki-error", out["error"])
+    return out.get("result")
 
 
 def store_media_file(path: str) -> str:
