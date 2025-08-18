@@ -1,7 +1,7 @@
 """Minimal MCP server wiring the language tools together.
 
 The implementation is intentionally lightweight and only depends on the
-`anthropic-mcp` package if it is available.  When the SDK is missing the
+`anthropic-mcp` package if it is available. When the SDK is missing the
 module still exposes a :func:`list_tools` helper so that downstream code
 can introspect the offered capabilities.
 """
@@ -22,6 +22,14 @@ from .tools.tts import speak_to_file
 from .tools.anki_tool import add_basic_note
 from .orchestration.pipeline import LessonConfig, build_lesson
 from .mcp_tools.lesson import make_card as make_lesson_card
+
+
+def lesson_make_card(word: str, lang: str, deck: str, tag: str) -> dict:
+    """Create a flashcard for a word.
+
+    Thin wrapper that delegates to :func:`app.mcp_tools.lesson.make_card`.
+    """
+    return make_lesson_card(word, lang, deck, tag)
 
 
 def create_server() -> "Server":  # type: ignore[return-type]
@@ -57,7 +65,8 @@ def create_server() -> "Server":  # type: ignore[return-type]
         return build_lesson(cfg)
 
     @server.tool("lesson.make_card")
-    async def lesson_make_card(word: str, lang: str, deck: str, tag: str):
+    async def lesson_make_card_tool(word: str, lang: str, deck: str, tag: str) -> dict:
+        # единая точка вызова для создания карточки
         return make_lesson_card(word, lang, deck, tag)
 
     return server
