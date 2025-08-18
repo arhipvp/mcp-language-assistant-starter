@@ -76,10 +76,15 @@ python -m bot.main
 ```dotenv
 LANGUAGETOOL_URL=http://localhost:8010
 ANKI_CONNECT_URL=http://127.0.0.1:8765
+GENAPI_QUALITY=high  # high|medium|low
 # Необязательно
 DEEPL_API_KEY=...
 OPENAI_API_KEY=...
 ```
+
+`GENAPI_QUALITY` определяет уровень детализации и стоимость генерации
+изображений через GenAPI: `high`, `medium` или `low`. Значение
+некейс‑сенситивно; при отсутствии параметра используется `high`.
 
 ## n8n workflow
 

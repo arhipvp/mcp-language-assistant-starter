@@ -37,5 +37,8 @@ def test_make_card_happy_path(monkeypatch):
     assert set(result) == {"note_id", "front", "back", "image"}
     assert result["note_id"] == 123
     assert result["front"] == "Hund"
-    assert result["back"] == "<div>Перевод: Собака спит</div><div>Satz: Der Hund schläфт.</div>".replace("шлäфт", "schläft")
+    assert (
+        result["back"]
+        == "<div>Перевод: Собака спит</div><div>Satz: Der Hund schläft.</div>"
+    )
     assert result["image"] == ""
