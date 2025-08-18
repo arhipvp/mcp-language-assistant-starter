@@ -11,6 +11,8 @@ import asyncio
 import logging
 from typing import Dict
 
+from . import setup_logging, log_effective_settings
+
 try:  # pragma: no cover - optional dependency
     import mcp
 except Exception:  # pragma: no cover
@@ -110,7 +112,12 @@ def list_tools() -> Dict[str, dict]:
 
 async def run() -> None:
     """Entry point used by ``python -m app.mcp_server``."""
+    setup_logging()
+    logger = logging.getLogger(__name__)
+    log_effective_settings(logger)
+    logger.info("Application starting...")
     server = create_server()
+    logger.info("MCP server listening on stdio.")
     await server.run_stdio_async()
 
 

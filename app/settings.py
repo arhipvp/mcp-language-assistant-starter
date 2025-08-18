@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import logging
 
 from dotenv import load_dotenv
 from typing import Literal
@@ -99,3 +100,20 @@ def _load_settings() -> Settings:
 
 
 settings = _load_settings()
+
+
+def log_effective_settings(logger: logging.Logger) -> None:
+    """Вывести ключевые настройки приложения без секретов."""
+
+    logger.info(
+        "model=%s image_model=%s anki_url=%s deck=\"%s\" tag=\"%s\" retries=%s/%s timeouts=%s/%s",
+        settings.OPENROUTER_TEXT_MODEL,
+        settings.OPENROUTER_IMAGE_MODEL,
+        settings.ANKI_CONNECT_URL,
+        settings.ANKI_DECK,
+        settings.ANKI_TAG,
+        settings.TEXT_MAX_RETRIES,
+        settings.IMAGE_MAX_RETRIES,
+        30,
+        60,
+    )
