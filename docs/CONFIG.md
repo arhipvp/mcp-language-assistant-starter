@@ -17,7 +17,7 @@
 | `GENAPI_MODEL_ID` | нет (по умолчанию `gpt-image-1`) | Модель для генерации изображений. |
 | `GENAPI_SIZE` | нет (по умолчанию `1024x1024`) | Размер изображений. |
 | `GENAPI_QUALITY` | нет (по умолчанию `low`) | Качество изображения (`low`, `medium`, `high`). |
-| `GENAPI_OUTPUT_FORMAT` | нет (по умолчанию `png`) | Формат выходного файла. |
+| `GENAPI_BACKGROUND` | нет (по умолчанию `transparent`) | Цвет фона генерации (`white` или `transparent`). |
 | `GENAPI_IS_SYNC` | нет (по умолчанию `true`) | Синхронный режим генерации. |
 | `GENAPI_CALLBACK_URL` | нет | URL для асинхронного callback'а. |
 
