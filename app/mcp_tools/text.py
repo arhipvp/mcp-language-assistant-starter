@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import os
-import time
 from typing import Any, Dict, List
 
-import requests
 from dotenv import load_dotenv
+
+from app.net.http import NetworkError, request_json
 
 # ── optional local provider (preferred if present) ────────────────────────────
 try:  # pragma: no cover - optional dependency
@@ -72,22 +72,17 @@ def _extract_content(resp: Any) -> str:
 def _chat_openrouter(messages: List[dict]) -> str:
     """Fallback chat via OpenRouter with retries."""
     if not OPENROUTER_API_KEY or not OPENROUTER_TEXT_MODEL:
-        raise RuntimeError("OpenRouter is not configured (OPENROUTER_API_KEY/TEXT_MODEL).")
+        raise NetworkError(
+            "config",
+            "OpenRouter is not configured",
+            {"missing": ["OPENROUTER_API_KEY", "OPENROUTER_TEXT_MODEL"]},
+        )
 
     headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}"}
     payload = {"model": OPENROUTER_TEXT_MODEL, "messages": messages}
 
-    for attempt in range(3):
-        try:
-            resp = requests.post(CHAT_URL, headers=headers, json=payload, timeout=30)
-            resp.raise_for_status()
-            data = resp.json()
-            return _extract_content(data).strip()
-        except Exception:
-            if attempt == 2:
-                raise
-            time.sleep(2**attempt)
-    raise RuntimeError("Failed to get completion")
+    data = request_json("POST", CHAT_URL, headers=headers, json=payload, timeout=30)
+    return _extract_content(data).strip()
 
 
 def _chat(messages: List[dict]) -> str:
