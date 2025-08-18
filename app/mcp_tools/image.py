@@ -7,15 +7,8 @@ from typing import Any
 
 import requests
 
-
-from app.settings import settings
-
 from app.net.http import request_json
-
-# --- env / config ---
-load_dotenv()
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-OPENROUTER_IMAGE_MODEL = os.getenv("OPENROUTER_IMAGE_MODEL", "")
+from app.settings import settings
 
 IMAGES_URL = "https://openrouter.ai/api/v1/images"
 
@@ -34,8 +27,8 @@ def _build_prompt(sentence_de: str) -> str:
 def generate_image_file(sentence_de: str) -> str:
     """Generate and save an image (PNG) that illustrates a simple German sentence.
 
-    Reads OPENROUTER_API_KEY and OPENROUTER_IMAGE_MODEL from environment (.env supported).
-    Returns absolute/relative file path on success, or an empty string on failure.
+    Credentials are taken from :mod:`app.settings`. Returns the path to the
+    saved image on success or an empty string on any failure.
     """
     if not settings.OPENROUTER_API_KEY or not settings.OPENROUTER_IMAGE_MODEL:
         return ""
