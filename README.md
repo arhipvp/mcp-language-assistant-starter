@@ -1,62 +1,62 @@
-
 # MCP Language Assistant (starter)
 
-A practical starter for a language-learning assistant built around **Model Context Protocol (MCP)** concepts and easily usable from tools like n8n. The aim is to orchestrate agents/tools for:
-- Getting transcripts from videos (YouTube)
-- Extracting vocabulary + CEFR tagging
-- Grammar feedback (LanguageTool)
-- Generating TTS for listening practice
-- Creating Anki cards automatically (AnkiConnect)
+Практический стартовый набор для языкового ассистента на базе **Model Context Protocol (MCP)**. Проект объединяет инструменты для:
+- получения транскриптов с YouTube
+- извлечения словаря с подсказками уровня CEFR
+- проверки грамматики через LanguageTool
+- генерации аудио с помощью TTS
+- автоматического добавления карточек в Anki
 
-> This is a scaffold: minimal working pieces + clear TODOs to wire a real MCP server (Anthropic MCP).
+## Компоненты
 
-## Components
+- `app/mcp_server.py` — минимальный MCP‑сервер с зарегистрированными инструментами
+- `app/orchestration/pipeline.py` — сборка урока из текста или YouTube
+- `app/tools/yt_transcript.py` — загрузка транскриптов
+- `app/tools/cefr_level.py` — извлечение словаря и уровней CEFR (использует открытый список частотности)
+- `app/tools/grammar.py` — проверка грамматики
+- `app/tools/tts.py` — синтез речи через Edge‑TTS
+- `app/tools/anki_tool.py` — работа с AnkiConnect
+- `app/cli.py` — CLI на Typer
 
-- `app/mcp_server.py` — placeholder MCP server entry (wire real MCP here)
-- `app/orchestration/pipeline.py` — simple pipeline orchestrator (works without MCP)
-- `app/tools/yt_transcript.py` — fetch YouTube transcripts (uses `youtube-transcript-api`)
-- `app/tools/anki_tool.py` — push cards via AnkiConnect
-- `app/tools/cefr_level.py` — naive CEFR estimator (stub)
-- `app/tools/grammar.py` — LanguageTool integration (local or remote URL)
-- `app/tools/tts.py` — TTS interface (stub; plug in Coqui TTS / Piper / Edge-TTS)
-- `app/cli.py` — Typer CLI: run end-to-end: URL -> vocab -> grammar -> Anki
-
-## Quick start
+## Быстрый старт
 
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
 
-# 1) Optional: run local LanguageTool
-# docker run -p 8010:8010 -e LANGUAGETOOL_LANGUAGE_MODEL=/ngrams #   silviof/docker-languagetool
+# Пример: построить урок из YouTube и добавить слова в Anki
+python -m app.cli build-lesson --url "https://www.youtube.com/watch?v=dQw4w9WgXcQ" \
+    --deck "Deutsch::Lektüre" --tag auto-mcp --limit 10 --tts
 
-# 2) Ensure Anki is running and AnkiConnect is installed (port 8765)
-
-# 3) Extract and push 10 words from a YouTube URL into Anki:
-python -m app.cli youtube-to-anki   --url "https://www.youtube.com/watch?v=dQw4w9WgXcQ"   --deck "Deutsch::Lektüre"   --tag "auto-mcp"   --limit 10
+# Или из произвольного текста
+python -m app.cli build-lesson --text "Hallo Welt, wir sprechen freundlich." \
+    --deck "Deutsch::Lektüre"
 ```
 
-## Environment
+Запуск MCP‑сервера:
 
-Copy `.env.example` to `.env` and adjust:
-
+```bash
+python -m app.mcp_server
 ```
+
+## Переменные окружения
+
+Создайте файл `.env` и укажите:
+
+```dotenv
 LANGUAGETOOL_URL=http://localhost:8010
 ANKI_CONNECT_URL=http://127.0.0.1:8765
+# Необязательно
+DEEPL_API_KEY=...
+OPENAI_API_KEY=...
 ```
 
-## Roadmap to full MCP
+## Тесты
 
-1. Replace `app/mcp_server.py` with a real MCP server (Anthropic's SDK).
-2. Register tools:
-   - `transcript.get(url)`
-   - `vocab.extract(text, limit)`
-   - `grammar.check(text[, level])`
-   - `tts.speak(text, voice)`
-   - `anki.add_note(front, back, deck, tags)`
-3. Expose a composite tool `lesson.build(url|text)` that runs the pipeline.
-4. Add auth/ratelimiting, logging, and tests.
+```bash
+pytest
+```
 
 ---
 
-Made for quick hacking and iteration.
+Сделано для быстрых экспериментов.
