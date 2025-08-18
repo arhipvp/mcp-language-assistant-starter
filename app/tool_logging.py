@@ -23,6 +23,18 @@ def _filter_args(bound: inspect.BoundArguments, sensitive: set[str]) -> dict[str
     return data
 
 
+def _log(name: str, status: str, start: float, filtered: dict[str, Any], err: str = "") -> None:
+    """Helper to log execution info in a consistent format."""
+    dur_ms = int((time.perf_counter() - start) * 1000)
+    msg = f"{name} {status} {dur_ms}ms"
+    if err:
+        logger.warning("%s %s", msg, err)
+        logger.debug("%s traceback:\n%s", name, traceback.format_exc())
+    else:
+        logger.info(msg)
+    logger.debug("%s args=%s", name, filtered)
+
+
 def log_tool(server: Any, name: str, *, sensitive_fields: Iterable[str] | None = None) -> Callable:
     """Decorator that registers a tool on ``server`` and logs its execution."""
     sensitive = {s.lower() for s in (sensitive_fields or [])} | _DEFAULT_SENSITIVE
@@ -36,37 +48,29 @@ def log_tool(server: Any, name: str, *, sensitive_fields: Iterable[str] | None =
             async def wrapper(*args, **kwargs):
                 bound = sig.bind_partial(*args, **kwargs)
                 filtered = _filter_args(bound, sensitive)
-                logger.info("%s start %s", name, filtered)
                 start = time.perf_counter()
                 try:
                     result = await func(*args, **kwargs)
-                    dur = time.perf_counter() - start
-                    logger.info("%s ok %.3fs", name, dur)
-                    logger.debug("%s result=%s", name, result)
-                    return result
                 except Exception as exc:  # noqa: BLE001
-                    dur = time.perf_counter() - start
-                    logger.warning("%s err %s %.3fs", name, exc, dur)
-                    logger.debug("%s traceback:\n%s", name, traceback.format_exc())
+                    _log(name, "err", start, filtered, str(exc).splitlines()[0])
                     raise
+                else:
+                    _log(name, "ok", start, filtered)
+                    return result
         else:
             @wraps(func)
             def wrapper(*args, **kwargs):
                 bound = sig.bind_partial(*args, **kwargs)
                 filtered = _filter_args(bound, sensitive)
-                logger.info("%s start %s", name, filtered)
                 start = time.perf_counter()
                 try:
                     result = func(*args, **kwargs)
-                    dur = time.perf_counter() - start
-                    logger.info("%s ok %.3fs", name, dur)
-                    logger.debug("%s result=%s", name, result)
-                    return result
                 except Exception as exc:  # noqa: BLE001
-                    dur = time.perf_counter() - start
-                    logger.warning("%s err %s %.3fs", name, exc, dur)
-                    logger.debug("%s traceback:\n%s", name, traceback.format_exc())
+                    _log(name, "err", start, filtered, str(exc).splitlines()[0])
                     raise
+                else:
+                    _log(name, "ok", start, filtered)
+                    return result
 
         return server.tool(name)(wrapper)
 
