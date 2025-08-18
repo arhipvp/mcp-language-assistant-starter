@@ -32,18 +32,10 @@ def translate_text(text: str, src: str, tgt: str) -> str:
     return getattr(text_mod, "translate_text")(text, src, tgt)
 
 
-def generate_image_file(sentence: str) -> str:
-    image_mod = importlib.import_module("app.mcp_tools.image")
-    gen = getattr(image_mod, "generate_image_file")
-    return gen(sentence)
-
-
 def generate_image_file_genapi(sentence: str) -> str:
-    image_mod = importlib.import_module("app.mcp_tools.image")
-    gen = getattr(image_mod, "generate_image_file_genapi", None)
-    if gen:
-        return gen(sentence)
-    return ""
+    image_mod = importlib.import_module("app.mcp_tools.image_genapi")
+    gen = getattr(image_mod, "generate_image_file_genapi")
+    return gen(sentence)
 
 
 def add_anki_note(**kwargs) -> int:
@@ -90,13 +82,11 @@ def make_card(
         translation_ru = translate(sentence_de, "de", "ru")
 
         # 5) Пытаемся сгенерировать картинку (может вернуть пустую строку)
-        provider = os.getenv("IMAGE_PROVIDER", "openrouter").strip().lower()
-        if provider == "genapi":
-            img_path = generate_image_file_genapi(sentence_de) or ""
-        elif provider == "none":
+        provider = os.getenv("IMAGE_PROVIDER", "genapi").strip().lower()
+        if provider == "none":
             img_path = ""
-        else:  # по умолчанию — openrouter (или неизвестный провайдер)
-            img_path = generate_image_file(sentence_de) or ""
+        else:
+            img_path = generate_image_file_genapi(sentence_de) or ""
 
         # 6) Формируем Back (без <img>; его пришьёт add_anki_note, если media_path передан)
         back_html = (

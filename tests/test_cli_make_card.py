@@ -5,10 +5,9 @@ import runpy
 def test_make_card_cli(monkeypatch, capsys):
     monkeypatch.setenv("OPENROUTER_API_KEY", "x")
     monkeypatch.setenv("OPENROUTER_TEXT_MODEL", "x")
-    monkeypatch.setenv("OPENROUTER_IMAGE_MODEL", "x")
     monkeypatch.setenv("ANKI_DECK", "Deck")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "x")
-
+    
     from app.mcp_tools import lesson
 
     called = {}

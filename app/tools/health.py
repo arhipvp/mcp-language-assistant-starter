@@ -21,6 +21,18 @@ def _check_openrouter(model: str) -> Dict[str, Any]:
     return {"ok": True, "model": model, "error": None}
 
 
+def _check_genapi() -> Dict[str, Any]:
+    """Validate GenAPI config."""
+
+    api_key = settings.GENAPI_API_KEY
+    model = settings.GENAPI_MODEL_ID
+    if not api_key:
+        return {"ok": False, "model": None, "error": "missing GENAPI_API_KEY"}
+    if not model:
+        return {"ok": False, "model": None, "error": "missing GENAPI_MODEL_ID"}
+    return {"ok": True, "model": model, "error": None}
+
+
 def _check_anki() -> Dict[str, Any]:
     """Call AnkiConnect version endpoint."""
 
@@ -37,7 +49,7 @@ def check_health() -> Dict[str, Dict[str, Any]]:
 
     return {
         "openrouter_text": _check_openrouter(settings.OPENROUTER_TEXT_MODEL),
-        "openrouter_image": _check_openrouter(settings.OPENROUTER_IMAGE_MODEL),
+        "genapi_image": _check_genapi(),
         "anki": _check_anki(),
     }
 

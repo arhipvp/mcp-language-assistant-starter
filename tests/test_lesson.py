@@ -5,7 +5,7 @@ def test_make_card_no_image(monkeypatch):
     # Stub out external dependencies
     monkeypatch.setattr(lesson, "generate_sentence", lambda w: "Der Hund schläft.")
     monkeypatch.setattr(lesson, "translate_text", lambda text, src, tgt: "Собака спит")
-    monkeypatch.setattr(lesson, "generate_image_file", lambda sentence: "")
+    monkeypatch.setattr(lesson, "generate_image_file_genapi", lambda sentence: "")
 
     params = {}
 

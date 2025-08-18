@@ -9,7 +9,6 @@ import pytest
 # required settings for importing modules
 os.environ.setdefault("OPENROUTER_API_KEY", "k")
 os.environ.setdefault("OPENROUTER_TEXT_MODEL", "m")
-os.environ.setdefault("OPENROUTER_IMAGE_MODEL", "m")
 os.environ.setdefault("ANKI_DECK", "d")
 os.environ.setdefault("TELEGRAM_BOT_TOKEN", "t")
 os.environ.setdefault("GENAPI_API_KEY", "g")
@@ -18,11 +17,11 @@ from app.mcp_tools import image_genapi
 
 
 def _setup_env(monkeypatch, tmp_path):
-    monkeypatch.setenv("GENAPI_MODEL_ID", "model")
     monkeypatch.setenv("GENAPI_POLL_INTERVAL_MS", "10")
     monkeypatch.setenv("GENAPI_POLL_TIMEOUT_MS", "30")
-    monkeypatch.setenv("GENAPI_IS_SYNC", "true")
     monkeypatch.setattr(image_genapi, "MEDIA_DIR", tmp_path)
+    monkeypatch.setattr(image_genapi.settings, "GENAPI_MODEL_ID", "model")
+    monkeypatch.setattr(image_genapi.settings, "GENAPI_IS_SYNC", True)
 
 
 def _dummy_resp_bytes() -> bytes:
@@ -98,9 +97,7 @@ def test_quality_param(monkeypatch, tmp_path):
     _setup_env(monkeypatch, tmp_path)
     recorder = {}
     _fake_create(monkeypatch, _dummy_resp_bytes(), recorder)
-    monkeypatch.setattr(
-        image_genapi, "settings", type("S", (), {"GENAPI_QUALITY": "medium"})()
-    )
+    monkeypatch.setattr(image_genapi.settings, "GENAPI_QUALITY", "medium")
     path = image_genapi.generate_image_file_genapi("Hallo")
     assert Path(path).exists()
     assert recorder["quality"] == "medium"

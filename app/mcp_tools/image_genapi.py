@@ -109,12 +109,17 @@ def generate_image_file_genapi(
     ref_kind: optional hint to force type ('path' | 'url' | 'b64')
     """
 
-    model_id = os.environ.get("GENAPI_MODEL_ID")
+    logger.info("start", extra={"step": "image.generate"})
+    if not settings.GENAPI_API_KEY:
+        logger.warning("skip", extra={"step": "image.generate"})
+        return ""
+
+    model_id = settings.GENAPI_MODEL_ID
     if not model_id or create_generation_task is None or get_task_status is None:
         return ""
 
-    is_sync = os.environ.get("GENAPI_IS_SYNC", "false").lower() == "true"
-    callback_url = os.environ.get("GENAPI_CALLBACK_URL")
+    is_sync = settings.GENAPI_IS_SYNC
+    callback_url = settings.GENAPI_CALLBACK_URL
     poll_interval_ms = _env_int("GENAPI_POLL_INTERVAL_MS", 1000)
     poll_timeout_ms = _env_int("GENAPI_POLL_TIMEOUT_MS", 10000)
 

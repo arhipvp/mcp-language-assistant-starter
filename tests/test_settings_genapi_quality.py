@@ -5,7 +5,6 @@ import pytest
 _BASE_ENV = {
     "OPENROUTER_API_KEY": "k",
     "OPENROUTER_TEXT_MODEL": "t",
-    "OPENROUTER_IMAGE_MODEL": "i",
     "ANKI_DECK": "d",
     "TELEGRAM_BOT_TOKEN": "x",
     "GENAPI_API_KEY": "g",

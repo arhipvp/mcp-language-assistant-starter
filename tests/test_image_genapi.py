@@ -4,7 +4,6 @@ from pathlib import Path
 
 os.environ.setdefault("OPENROUTER_API_KEY","k")
 os.environ.setdefault("OPENROUTER_TEXT_MODEL","m")
-os.environ.setdefault("OPENROUTER_IMAGE_MODEL","m")
 os.environ.setdefault("ANKI_DECK","d")
 os.environ.setdefault("TELEGRAM_BOT_TOKEN","t")
 os.environ.setdefault("GENAPI_API_KEY","g")
@@ -13,15 +12,16 @@ from app.mcp_tools import image_genapi
 
 
 def _setup_env(monkeypatch, tmp_path):
-    monkeypatch.setenv("GENAPI_MODEL_ID", "model")
     monkeypatch.setenv("GENAPI_POLL_INTERVAL_MS", "10")
     monkeypatch.setenv("GENAPI_POLL_TIMEOUT_MS", "30")
     monkeypatch.setattr(image_genapi, "MEDIA_DIR", tmp_path)
+    monkeypatch.setattr(image_genapi.settings, "GENAPI_MODEL_ID", "model")
+    monkeypatch.setattr(image_genapi.settings, "GENAPI_IS_SYNC", True)
 
 
 def test_genapi_success_url(monkeypatch, tmp_path):
     _setup_env(monkeypatch, tmp_path)
-    monkeypatch.setenv("GENAPI_IS_SYNC", "true")
+    monkeypatch.setattr(image_genapi.settings, "GENAPI_IS_SYNC", True)
 
     img_bytes = b"url-bytes"
 
@@ -53,7 +53,7 @@ def test_genapi_success_url(monkeypatch, tmp_path):
 
 def test_genapi_success_b64(monkeypatch, tmp_path):
     _setup_env(monkeypatch, tmp_path)
-    monkeypatch.setenv("GENAPI_IS_SYNC", "true")
+    monkeypatch.setattr(image_genapi.settings, "GENAPI_IS_SYNC", True)
 
     img_bytes = b"b64-bytes"
     b64 = base64.b64encode(img_bytes).decode()
@@ -72,7 +72,7 @@ def test_genapi_success_b64(monkeypatch, tmp_path):
 
 def test_genapi_failure(monkeypatch, tmp_path):
     _setup_env(monkeypatch, tmp_path)
-    monkeypatch.setenv("GENAPI_IS_SYNC", "true")
+    monkeypatch.setattr(image_genapi.settings, "GENAPI_IS_SYNC", True)
 
     def fake_create_generation_task(**kwargs):
         raise RuntimeError("boom")
@@ -86,7 +86,7 @@ def test_genapi_failure(monkeypatch, tmp_path):
 
 def test_genapi_unexpected_format(monkeypatch, tmp_path):
     _setup_env(monkeypatch, tmp_path)
-    monkeypatch.setenv("GENAPI_IS_SYNC", "true")
+    monkeypatch.setattr(image_genapi.settings, "GENAPI_IS_SYNC", True)
 
     def fake_create_generation_task(**kwargs):
         return {"result": {"foo": "bar"}}
@@ -100,7 +100,7 @@ def test_genapi_unexpected_format(monkeypatch, tmp_path):
 
 def test_genapi_timeout(monkeypatch, tmp_path):
     _setup_env(monkeypatch, tmp_path)
-    monkeypatch.setenv("GENAPI_IS_SYNC", "false")
+    monkeypatch.setattr(image_genapi.settings, "GENAPI_IS_SYNC", False)
 
     def fake_create_generation_task(**kwargs):
         return {"request_id": "123"}

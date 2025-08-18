@@ -21,11 +21,11 @@ def load_health(monkeypatch, **env):
 def base_env():
     return {
         "OPENROUTER_TEXT_MODEL": "vendor/text-model",
-        "OPENROUTER_IMAGE_MODEL": "vendor/image-model",
         "ANKI_DECK": "deck",
         "TELEGRAM_BOT_TOKEN": "token",
         "ANKI_CONNECT_URL": "http://anki",
         "GENAPI_API_KEY": "sk-genapi",
+        "GENAPI_MODEL_ID": "gen-model",
     }
 
 
@@ -45,9 +45,9 @@ def test_check_health_success(monkeypatch):
             "model": env["OPENROUTER_TEXT_MODEL"],
             "error": None,
         },
-        "openrouter_image": {
+        "genapi_image": {
             "ok": True,
-            "model": env["OPENROUTER_IMAGE_MODEL"],
+            "model": env["GENAPI_MODEL_ID"],
             "error": None,
         },
         "anki": {"ok": True, "error": None},
@@ -84,6 +84,6 @@ def test_check_health_invalid_openrouter(monkeypatch):
 
     assert result["openrouter_text"]["ok"] is False
     assert result["openrouter_text"]["error"] == "invalid OPENROUTER_API_KEY"
-    assert result["openrouter_image"]["ok"] is False
+    assert result["genapi_image"]["ok"] is True
     assert result["anki"]["ok"] is True
 
