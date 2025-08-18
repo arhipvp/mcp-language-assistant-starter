@@ -1,6 +1,17 @@
 import base64
+import os
 
 import pytest
+
+for key in [
+    "OPENROUTER_API_KEY",
+    "OPENROUTER_TEXT_MODEL",
+    "OPENROUTER_IMAGE_MODEL",
+    "ANKI_DECK",
+    "TELEGRAM_BOT_TOKEN",
+    "GENAPI_API_KEY",
+]:
+    os.environ.setdefault(key, "test")
 
 from app.mcp_tools import anki
 from app.settings import settings
