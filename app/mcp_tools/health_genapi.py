@@ -9,7 +9,7 @@ import requests
 
 from app.settings import settings
 
-IMAGES_URL = "https://api.gen-api.ru/v1/images"
+IMAGES_URL = "https://api.gen-api.ru/v1/images/generate"
 
 logger = logging.getLogger(__name__)
 
@@ -26,12 +26,10 @@ def genapi_check() -> Dict[str, Any]:
         "prompt": "test",
         "size": settings.GENAPI_SIZE,
         "quality": settings.GENAPI_QUALITY,
-        "output_format": settings.GENAPI_OUTPUT_FORMAT,
+        "background": settings.GENAPI_BACKGROUND,
+        "response_format": "b64_json",
         "n": 1,
-        "sync": False,
     }
-    if settings.GENAPI_CALLBACK_URL is not None:
-        payload["callback_url"] = settings.GENAPI_CALLBACK_URL
 
     try:
         resp = requests.post(IMAGES_URL, headers=headers, json=payload, timeout=10)

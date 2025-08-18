@@ -28,7 +28,7 @@ class Settings(BaseModel):
     GENAPI_MODEL_ID: str = "gpt-image-1"
     GENAPI_SIZE: str = "1024x1024"
     GENAPI_QUALITY: str = "low"
-    GENAPI_OUTPUT_FORMAT: str = "png"
+    GENAPI_BACKGROUND: str = "transparent"
     GENAPI_IS_SYNC: bool = True
     GENAPI_CALLBACK_URL: str | None = None
 
@@ -57,7 +57,7 @@ def _load_settings() -> Settings:
             "GENAPI_MODEL_ID": os.environ.get("GENAPI_MODEL_ID", "gpt-image-1"),
             "GENAPI_SIZE": os.environ.get("GENAPI_SIZE", "1024x1024"),
             "GENAPI_QUALITY": os.environ.get("GENAPI_QUALITY", "low"),
-            "GENAPI_OUTPUT_FORMAT": os.environ.get("GENAPI_OUTPUT_FORMAT", "png"),
+            "GENAPI_BACKGROUND": os.environ.get("GENAPI_BACKGROUND", "transparent"),
             "GENAPI_IS_SYNC": os.environ.get("GENAPI_IS_SYNC", "true").lower()
             in {"1", "true", "yes"},
             "GENAPI_CALLBACK_URL": os.environ.get("GENAPI_CALLBACK_URL") or None,
