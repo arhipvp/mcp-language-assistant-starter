@@ -1,6 +1,7 @@
 """Text-related MCP tools."""
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List
 
 from app.net.http import NetworkError, request_json
@@ -99,6 +100,22 @@ def _clean_line(text: str) -> str:
     return " ".join(text.split()).strip()
 
 
+def _includes_target(word_de: str, sentence_de: str) -> bool:
+    """Return True if `sentence_de` contains `word_de` (normalized)."""
+
+    def _norm(s: str) -> str:
+        s = s.lower()
+        s = s.translate(
+            str.maketrans({"ä": "a", "ö": "o", "ü": "u", "ß": "ss"})
+        )
+        s = re.sub(r"[^\w\s]", "", s)
+        return s
+
+    word = _norm(word_de)
+    sent = _norm(sentence_de)
+    return re.search(rf"\b{re.escape(word)}\b", sent) is not None
+
+
 # ── public API ────────────────────────────────────────────────────────────────
 def generate_sentence(word_de: str) -> str:
     """Generate a single B1-level German sentence containing `word_de`."""
@@ -106,8 +123,14 @@ def generate_sentence(word_de: str) -> str:
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": word_de},
     ]
-    out = _chat(messages)
-    return _clean_line(out)
+    last: str = ""
+    for _ in range(3):
+        out = _chat(messages)
+        cleaned = _clean_line(out)
+        if _includes_target(word_de, cleaned):
+            return cleaned
+        last = cleaned
+    raise NetworkError("validation", "target word missing", {"word": word_de, "sentence": last})
 
 
 def translate_text(text: str, src: str, tgt: str) -> str:
