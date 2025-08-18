@@ -22,6 +22,8 @@ class Settings(BaseModel):
     TEXT_MAX_RETRIES: int = 3
     IMAGE_MAX_RETRIES: int = 3
     GENERATION_DELAY_MS: int = 0
+    GENAPI_CALLBACK_URL: str | None = None
+    GENAPI_IS_SYNC: bool = True
 
 
 def _load_settings() -> Settings:
@@ -37,6 +39,9 @@ def _load_settings() -> Settings:
             "TEXT_MAX_RETRIES": int(os.environ.get("TEXT_MAX_RETRIES", 3)),
             "IMAGE_MAX_RETRIES": int(os.environ.get("IMAGE_MAX_RETRIES", 3)),
             "GENERATION_DELAY_MS": int(os.environ.get("GENERATION_DELAY_MS", 0)),
+            "GENAPI_CALLBACK_URL": os.environ.get("GENAPI_CALLBACK_URL"),
+            "GENAPI_IS_SYNC": os.environ.get("GENAPI_IS_SYNC", "true").lower()
+            not in {"false", "0"},
         }
     except KeyError as e:  # pragma: no cover - simple error path
         raise RuntimeError(f"Missing required environment variable: {e.args[0]}") from None

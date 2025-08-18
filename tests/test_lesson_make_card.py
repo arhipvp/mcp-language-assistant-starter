@@ -1,3 +1,4 @@
+import importlib
 import sys
 import types
 
@@ -8,6 +9,8 @@ def test_make_card_happy_path(monkeypatch):
     monkeypatch.setenv("OPENROUTER_IMAGE_MODEL", "x")
     monkeypatch.setenv("ANKI_DECK", "Deck")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "x")
+    import app.settings as settings_module
+    importlib.reload(settings_module)
 
     fake_text = types.ModuleType("app.mcp_tools.text")
     fake_text.generate_sentence = lambda w: "Der Hund schläft."
@@ -22,9 +25,10 @@ def test_make_card_happy_path(monkeypatch):
     fake_anki.add_anki_note = lambda **kwargs: 123
     monkeypatch.setitem(sys.modules, "app.mcp_tools.anki", fake_anki)
 
-    from app.mcp_tools.lesson import make_card
+    import app.mcp_tools.lesson as lesson_module
+    lesson_module = importlib.reload(lesson_module)
 
-    result = make_card("Hund", "de", "Deck", "tag")
+    result = lesson_module.make_card("Hund", "de", "Deck", "tag")
 
     assert set(result) == {"note_id", "front", "back", "image"}
     assert result["note_id"] == 123
