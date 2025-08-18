@@ -80,3 +80,12 @@ def generate_image_file(sentence_de: str) -> ImageMeta | str:
         return ImageMeta(str(out_path), hash_hex, model)
     except Exception:
         return ""
+
+
+def generate_image_file_genapi(sentence_de: str) -> ImageMeta | str:
+    """Generate an image using the GenAPI provider.
+
+    This is a placeholder implementation; network calls are expected to be
+    mocked in tests. On any failure returns an empty string.
+    """
+    return ""

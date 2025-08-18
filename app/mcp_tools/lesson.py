@@ -3,11 +3,7 @@ from __future__ import annotations
 import os
 import re
 from typing import Dict, Optional
-
-# Основные инструменты (ранее тобой объединённые модули)
-from .text import generate_sentence, translate_text
-from .image import generate_image_file
-from .anki import add_anki_note
+import importlib
 
 # Для грубого детекта кириллицы
 _CYRILLIC_RE = re.compile(r"[\u0400-\u04FF]")
@@ -31,6 +27,15 @@ def make_card(
 
     Если картинка не сгенерировалась — карточка всё равно создаётся.
     """
+    # Динамические импорты, чтобы тесты могли подменять модули через sys.modules
+    text_mod = importlib.import_module("app.mcp_tools.text")
+    image_mod = importlib.import_module("app.mcp_tools.image")
+    anki_mod = importlib.import_module("app.mcp_tools.anki")
+
+    gen_sentence = getattr(text_mod, "generate_sentence")
+    translate = getattr(text_mod, "translate_text")
+    add_note = getattr(anki_mod, "add_anki_note")
+
     # 1) Определяем язык входа
     in_lang = (lang or "").strip().lower() or _detect_lang(word)
 
@@ -39,16 +44,23 @@ def make_card(
         word_de = word
     else:
         # слово было RU → переводим в DE
-        word_de = translate_text(word, "ru", "de")
+        word_de = translate(word, "ru", "de")
 
     # 3) Генерируем B1-предложение с этим словом
-    sentence_de = generate_sentence(word_de)
+    sentence_de = gen_sentence(word_de)
 
     # 4) Переводим предложение на RU (для Back)
-    translation_ru = translate_text(sentence_de, "de", "ru")
+    translation_ru = translate(sentence_de, "de", "ru")
 
     # 5) Пытаемся сгенерировать картинку (может вернуть пустую строку)
-    img_path = generate_image_file(sentence_de) or ""
+    provider = os.getenv("IMAGE_PROVIDER", "openrouter").strip().lower()
+    if provider == "genapi" and hasattr(image_mod, "generate_image_file_genapi"):
+        img_path = image_mod.generate_image_file_genapi(sentence_de) or ""
+    elif provider == "none":
+        img_path = ""
+    else:  # по умолчанию — openrouter (или неизвестный провайдер)
+        gen_image = getattr(image_mod, "generate_image_file")
+        img_path = gen_image(sentence_de) or ""
 
     # 6) Формируем Back (без <img>; его пришьёт add_anki_note, если media_path передан)
     back_html = (
@@ -57,7 +69,7 @@ def make_card(
     )
 
     # 7) Добавляем карточку в Anki
-    note_id = add_anki_note(
+    note_id = add_note(
         front=word_de,
         back_html=back_html,
         deck=deck,

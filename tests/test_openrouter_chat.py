@@ -1,21 +1,23 @@
 import importlib
 from types import SimpleNamespace
-
 import pytest
 
 from app.net.http import NetworkError
 
 
 # helper to import module after setting env
-
 def _import_module(monkeypatch):
     monkeypatch.setenv("OPENROUTER_API_KEY", "key")
     monkeypatch.setenv("OPENROUTER_TEXT_MODEL", "m")
     monkeypatch.setenv("OPENROUTER_IMAGE_MODEL", "img")
     monkeypatch.setenv("ANKI_DECK", "deck")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token")
-    import app.settings as s
-    importlib.reload(s)
+    # не обязательно для этого модуля, но пусть будет для консистентности окружения
+    monkeypatch.setenv("GENAPI_API_KEY", "x")
+
+    import app.settings as settings_module
+    importlib.reload(settings_module)
+
     module = importlib.import_module("app.mcp_tools.openrouter_chat")
     return importlib.reload(module)
 

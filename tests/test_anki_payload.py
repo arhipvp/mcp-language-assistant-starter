@@ -8,6 +8,7 @@ for key in [
     "OPENROUTER_IMAGE_MODEL",
     "ANKI_DECK",
     "TELEGRAM_BOT_TOKEN",
+    "GENAPI_API_KEY",
 ]:
     os.environ.setdefault(key, "test")
 
