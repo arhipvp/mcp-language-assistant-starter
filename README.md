@@ -76,7 +76,7 @@ python -m bot.main
 ```dotenv
 LANGUAGETOOL_URL=http://localhost:8010
 ANKI_CONNECT_URL=http://127.0.0.1:8765
-GENAPI_QUALITY=high  # high|medium|low
+GENAPI_QUALITY=low  # low|medium|high
 # Логи
 LOG_LEVEL=INFO
 LOG_FILE=logs/app.log

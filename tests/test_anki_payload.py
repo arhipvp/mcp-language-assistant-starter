@@ -5,7 +5,6 @@ from typing import List
 for key in [
     "OPENROUTER_API_KEY",
     "OPENROUTER_TEXT_MODEL",
-    "OPENROUTER_IMAGE_MODEL",
     "ANKI_DECK",
     "TELEGRAM_BOT_TOKEN",
     "GENAPI_API_KEY",

@@ -5,7 +5,6 @@ import runpy
 def test_make_card_cli(monkeypatch, capsys):
     monkeypatch.setenv("OPENROUTER_API_KEY", "x")
     monkeypatch.setenv("OPENROUTER_TEXT_MODEL", "x")
-    monkeypatch.setenv("OPENROUTER_IMAGE_MODEL", "x")
     monkeypatch.setenv("ANKI_DECK", "Deck")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "x")
 
@@ -15,7 +14,7 @@ def test_make_card_cli(monkeypatch, capsys):
 
     def fake_make_card(word, lang, deck, tag):
         called['args'] = (word, lang, deck, tag)
-        return {'front': 'Hund', 'back': 'Back', 'image': 'img.png', 'note_id': 42}
+        return {'front': 'Hund', 'back': 'Back', 'image': 'img.png', 'note_id': 42, 'message': 'm'}
 
     monkeypatch.setattr(lesson, 'make_card', fake_make_card)
 
@@ -30,4 +29,4 @@ def test_make_card_cli(monkeypatch, capsys):
     assert exit_code == 0
     assert called['args'] == ('Hund', 'de', 'Deck', 'tag')
     out = capsys.readouterr().out.strip()
-    assert json.loads(out) == {'front': 'Hund', 'back': 'Back', 'image': 'img.png', 'note_id': 42}
+    assert json.loads(out) == {'front': 'Hund', 'back': 'Back', 'image': 'img.png', 'note_id': 42, 'message': 'm'}

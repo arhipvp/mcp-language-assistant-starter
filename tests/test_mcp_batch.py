@@ -3,7 +3,6 @@ def test_make_cards_from_list_handles_errors(monkeypatch):
     # satisfy settings import
     monkeypatch.setenv("OPENROUTER_API_KEY", "x")
     monkeypatch.setenv("OPENROUTER_TEXT_MODEL", "x")
-    monkeypatch.setenv("OPENROUTER_IMAGE_MODEL", "x")
     monkeypatch.setenv("ANKI_DECK", "Deck")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "x")
 

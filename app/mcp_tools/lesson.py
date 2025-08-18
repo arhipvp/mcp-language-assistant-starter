@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import re
 import time
 from typing import Dict, Optional
@@ -36,14 +35,6 @@ def generate_image_file(sentence: str) -> str:
     image_mod = importlib.import_module("app.mcp_tools.image")
     gen = getattr(image_mod, "generate_image_file")
     return gen(sentence)
-
-
-def generate_image_file_genapi(sentence: str) -> str:
-    image_mod = importlib.import_module("app.mcp_tools.image")
-    gen = getattr(image_mod, "generate_image_file_genapi", None)
-    if gen:
-        return gen(sentence)
-    return ""
 
 
 def add_anki_note(**kwargs) -> int:
@@ -90,19 +81,15 @@ def make_card(
         translation_ru = translate(sentence_de, "de", "ru")
 
         # 5) Пытаемся сгенерировать картинку (может вернуть пустую строку)
-        provider = os.getenv("IMAGE_PROVIDER", "openrouter").strip().lower()
-        if provider == "genapi":
-            img_path = generate_image_file_genapi(sentence_de) or ""
-        elif provider == "none":
-            img_path = ""
-        else:  # по умолчанию — openrouter (или неизвестный провайдер)
-            img_path = generate_image_file(sentence_de) or ""
+        img_path = generate_image_file(sentence_de) or ""
 
-        # 6) Формируем Back (без <img>; его пришьёт add_anki_note, если media_path передан)
+        # 6) Формируем Back
         back_html = (
             f"<div>Перевод: {translation_ru}</div>"
             f"<div>Satz: {sentence_de}</div>"
         )
+        if img_path:
+            back_html += f'<img src="{img_path}">'  # already includes media/
 
         if not word_de.strip() or not back_html.strip():
             logger.error("empty fields", extra={"step": "anki.add_note"})
@@ -118,16 +105,19 @@ def make_card(
         )
 
         # 8) Возвращаем краткий результат
-        img_name = os.path.basename(img_path) if img_path else ""
         lat_ms = int((time.perf_counter() - start) * 1000)
         logger.info(
             "ok", extra={"step": "lesson.make_card", "lat_ms": lat_ms, "outlen": len(back_html)}
+        )
+        message = (
+            "Карточка создана с изображением" if img_path else "Карточка создана без изображения"
         )
         return {
             "note_id": note_id,
             "front": word_de,
             "back": back_html,
-            "image": img_name,
+            "image": img_path,
+            "message": message,
         }
     except EmptyFieldsError:
         raise
