@@ -8,6 +8,7 @@ def test_make_card_happy_path(monkeypatch):
     monkeypatch.setenv("OPENROUTER_IMAGE_MODEL", "x")
     monkeypatch.setenv("ANKI_DECK", "Deck")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "x")
+    monkeypatch.setenv("GENAPI_API_KEY", "x")
 
     fake_text = types.ModuleType("app.mcp_tools.text")
     fake_text.generate_sentence = lambda w: "Der Hund schläft."
@@ -21,7 +22,7 @@ def test_make_card_happy_path(monkeypatch):
     fake_anki = types.ModuleType("app.mcp_tools.anki")
     fake_anki.add_anki_note = lambda **kwargs: 123
     monkeypatch.setitem(sys.modules, "app.mcp_tools.anki", fake_anki)
-
+    monkeypatch.delitem(sys.modules, "app.mcp_tools.lesson", raising=False)
     from app.mcp_tools.lesson import make_card
 
     result = make_card("Hund", "de", "Deck", "tag")

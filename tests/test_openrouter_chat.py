@@ -1,6 +1,7 @@
 import importlib
 from types import SimpleNamespace
-
+from types import SimpleNamespace
+import importlib
 import pytest
 
 from app.net.http import NetworkError
@@ -14,6 +15,10 @@ def _import_module(monkeypatch):
     monkeypatch.setenv("OPENROUTER_IMAGE_MODEL", "img")
     monkeypatch.setenv("ANKI_DECK", "deck")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token")
+
+
+    monkeypatch.setenv("GENAPI_API_KEY", "x")
+
     import app.settings as settings_module
     importlib.reload(settings_module)
     module = importlib.import_module("app.mcp_tools.openrouter_chat")
