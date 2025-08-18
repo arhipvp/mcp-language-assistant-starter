@@ -39,6 +39,27 @@ python -m app.cli build-lesson --text "Hallo Welt, wir sprechen freundlich." \
 python -m app.mcp_server
 ```
 
+### Как протестировать MCP через Inspector
+
+1. Убедитесь, что установлен Node.js.
+2. Запустите инспектор, который сам поднимет сервер через stdio:
+
+   ```bash
+   npx @modelcontextprotocol/inspector --stdio "python -m app.mcp_server"
+   ```
+
+   После запуска откройте страницу, указанную в терминале (обычно `http://localhost:5173`).
+
+3. Через веб‑интерфейс вызовите инструменты, например:
+
+   - `lesson.make_card` — создаёт карточку в Anki.
+   - `server.health` — проверяет окружение и доступность AnkiConnect.
+
+#### Health‑check и типовые ошибки
+
+- Если нет файла `.env`, `server.health` вернёт `"env": false`.
+- Если AnkiConnect недоступен, поле `"anki"` будет `false`, а в `"error"` появится сообщение соединения (например `Connection refused`).
+
 Запуск Telegram-бота:
 
 ```bash
@@ -59,6 +80,18 @@ ANKI_CONNECT_URL=http://127.0.0.1:8765
 DEEPL_API_KEY=...
 OPENAI_API_KEY=...
 ```
+
+## n8n workflow
+
+Готовый workflow лежит в `examples/n8n-word-to-telegram.json`.
+
+1. Запустите n8n, передав переменные окружения:
+   - `TELEGRAM_BOT_TOKEN` — токен бота Telegram.
+   - `MCP_BASE_URL` — адрес MCP‑прокси или локального stdio‑bridge.
+2. В интерфейсе n8n выберите **Import from File** и загрузите `examples/n8n-word-to-telegram.json`.
+3. Откройте узлы **Send Photo** и **Send Text** и укажите `chatId` чата, куда слать карточки.
+4. Активируйте workflow. Webhook будет доступен по адресу `http://<host>/webhook/word`.
+5. Отправьте POST с JSON `{"word": "Haus"}` — в Telegram придёт текст и фото (если найдено).
 
 ## Тесты
 

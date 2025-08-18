@@ -1,10 +1,9 @@
 """Text-related MCP tools."""
 from __future__ import annotations
 
-import time
 from typing import Any, Dict, List
 
-import requests
+from app.net.http import NetworkError, request_json
 
 # ── optional local provider (preferred if present) ────────────────────────────
 try:  # pragma: no cover - optional dependency
@@ -67,24 +66,22 @@ def _extract_content(resp: Any) -> str:
 
 
 def _chat_openrouter(messages: List[dict]) -> str:
-    """Fallback chat via OpenRouter with retries."""
+    """Fallback chat via OpenRouter."""
     api_key = settings.OPENROUTER_API_KEY
     model = settings.OPENROUTER_TEXT_MODEL
+    missing = []
+    if not api_key:
+        missing.append("OPENROUTER_API_KEY")
+    if not model:
+        missing.append("OPENROUTER_TEXT_MODEL")
+    if missing:
+        raise NetworkError("config", "OpenRouter is not configured", {"missing": missing})
 
     headers = {"Authorization": f"Bearer {api_key}"}
     payload = {"model": model, "messages": messages}
 
-    for attempt in range(3):
-        try:
-            resp = requests.post(CHAT_URL, headers=headers, json=payload, timeout=30)
-            resp.raise_for_status()
-            data = resp.json()
-            return _extract_content(data).strip()
-        except Exception:
-            if attempt == 2:
-                raise
-            time.sleep(2**attempt)
-    raise RuntimeError("Failed to get completion")
+    data = request_json("POST", CHAT_URL, headers=headers, json=payload, timeout=30)
+    return _extract_content(data).strip()
 
 
 def _chat(messages: List[dict]) -> str:

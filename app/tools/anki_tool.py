@@ -1,19 +1,26 @@
 import os
-import requests
 from typing import List, Optional
+
 
 from app.settings import settings
 
 ANKI_URL = settings.ANKI_CONNECT_URL
 
 
+from dotenv import load_dotenv
+
+from app.net.http import NetworkError, request_json
+
+load_dotenv()
+ANKI_URL = os.getenv("ANKI_CONNECT_URL", "http://127.0.0.1:8765")
+
+
+
 def _invoke(action: str, **params):
     payload = {"action": action, "version": 6, "params": params}
-    r = requests.post(ANKI_URL, json=payload, timeout=15)
-    r.raise_for_status()
-    out = r.json()
+    out = request_json("POST", ANKI_URL, json=payload, timeout=15)
     if out.get("error"):
-        raise RuntimeError(out["error"])
+        raise NetworkError("anki-error", out["error"])
     return out["result"]
 
 

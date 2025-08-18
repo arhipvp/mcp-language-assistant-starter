@@ -20,9 +20,14 @@ from .tools.cefr_level import extract_vocab
 from .tools.grammar import check_text
 from .tools.tts import speak_to_file
 from .tools.anki_tool import add_basic_note
+from .tools.health import check_health
 from .orchestration.pipeline import LessonConfig, build_lesson
 from .mcp_tools.lesson import make_card as make_lesson_card
+
 from .settings import settings  # noqa: F401  - trigger config loading
+
+from .tool_logging import log_tool
+
 
 
 def lesson_make_card(word: str, lang: str, deck: str, tag: str) -> dict:
@@ -40,35 +45,38 @@ def create_server() -> "Server":  # type: ignore[return-type]
 
     server = Server("language-assistant")
 
-    @server.tool("transcript.get")
+    @log_tool(server, "transcript.get")
     async def transcript_get(url: str) -> str:
         return fetch_transcript(url)
 
-    @server.tool("vocab.extract")
+    @log_tool(server, "vocab.extract")
     async def vocab_extract(text: str, limit: int = 20):
         return extract_vocab(text, limit=limit)
 
-    @server.tool("grammar.check")
+    @log_tool(server, "grammar.check")
     async def grammar_check(text: str, language: str = "de"):
         return check_text(text, language=language)
 
-    @server.tool("tts.speak")
+    @log_tool(server, "tts.speak")
     async def tts_speak(text: str, voice: str = "de-DE") -> str:
         return speak_to_file(text, f"tts_{abs(hash(text))}.mp3", voice=voice)
 
-    @server.tool("anki.add_note")
+    @log_tool(server, "anki.add_note")
     async def anki_add_note(front: str, back: str, deck: str, tags: List[str] | None = None):
         return add_basic_note(front, back, deck, tags=tags)
 
-    @server.tool("lesson.build")
+    @log_tool(server, "lesson.build")
     async def lesson_build(url: str, deck: str, tag: str = "auto", limit: int = 15):
         cfg = LessonConfig(url=url, deck=deck, tag=tag, limit=limit)
         return build_lesson(cfg)
 
-    @server.tool("lesson.make_card")
+    @log_tool(server, "lesson.make_card")
     async def lesson_make_card_tool(word: str, lang: str, deck: str, tag: str) -> dict:
-        # единая точка вызова для создания карточки
         return make_lesson_card(word, lang, deck, tag)
+
+    @server.tool("server.health")
+    async def server_health() -> dict:
+        return check_health()
 
     return server
 
@@ -92,6 +100,7 @@ def list_tools() -> Dict[str, dict]:
             "args": ["word: str", "lang: str", "deck: str", "tag: str"],
             "returns": "dict",
         },
+        "server.health": {"args": [], "returns": "dict"},
     }
 
 
