@@ -1,7 +1,8 @@
 import base64
 import os
 import time
-from typing import List
+from typing import Any, List, Optional
+
 import requests
 from dotenv import load_dotenv
 
@@ -10,7 +11,8 @@ load_dotenv()
 ANKI_CONNECT_URL = os.getenv("ANKI_CONNECT_URL", "http://127.0.0.1:8765")
 
 
-def _invoke(action: str, **params):
+def _invoke(action: str, **params) -> Any:
+    """Вызов метода AnkiConnect с 3 попытками и экспоненциальной паузой."""
     payload = {"action": action, "version": 6, "params": params}
     for attempt in range(3):
         try:
@@ -19,7 +21,7 @@ def _invoke(action: str, **params):
             out = resp.json()
             if out.get("error"):
                 raise RuntimeError(out["error"])
-            return out["result"]
+            return out.get("result")
         except Exception:
             if attempt == 2:
                 raise
@@ -27,20 +29,35 @@ def _invoke(action: str, **params):
     raise RuntimeError("Anki invocation failed")
 
 
-def add_anki_note(front: str, back: str, deck: str, tags: List[str], media_path: str) -> int:
-    """Добавить карточку в Anki с опциональным изображением."""
+def store_media_file(path: str) -> str:
+    """Загрузить файл в медиа Anki и вернуть итоговое имя файла."""
+    filename = os.path.basename(path)
+    with open(path, "rb") as f:
+        encoded = base64.b64encode(f.read()).decode("ascii")
+    return _invoke("storeMediaFile", filename=filename, data=encoded)
+
+
+def add_anki_note(
+    front: str,
+    back_html: str,
+    deck: str,
+    tags: Optional[List[str]] = None,
+    media_path: Optional[str] = None,
+) -> int:
+    """Создать базовую карточку Anki с опциональным изображением на обороте."""
     tags = tags or []
-    back_html = back
+
     if media_path:
-        with open(media_path, "rb") as f:
-            data = base64.b64encode(f.read()).decode("ascii")
-        filename = os.path.basename(media_path)
-        _invoke("storeMediaFile", filename=filename, data=data)
-        back_html += f'<br><img src="{filename}">'
+        media_filename = store_media_file(media_path)
+        # Добавляем картинку, если пользователь ещё не вставил <img> вручную
+        if "<img" not in back_html:
+            back_html += f'<br><img src="{media_filename}">'
+
     note = {
         "deckName": deck,
         "modelName": "Basic",
         "fields": {"Front": front, "Back": back_html},
         "tags": tags,
     }
+    # Возвращает ID заметки (int)
     return _invoke("addNote", note=note)
