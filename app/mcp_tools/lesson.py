@@ -19,6 +19,7 @@ def make_card(
     lang: Optional[str],
     deck: str,
     tag: str = "tg-auto",
+    # TODO: ref_image: str | bytes | None = None
 ) -> Dict[str, str | int]:
     """Полный цикл создания карточки Anki из одного слова.
 
@@ -55,6 +56,8 @@ def make_card(
     # 5) Пытаемся сгенерировать картинку (может вернуть пустую строку)
     provider = os.getenv("IMAGE_PROVIDER", "openrouter").strip().lower()
     if provider == "genapi" and hasattr(image_mod, "generate_image_file_genapi"):
+        # TODO: при добавлении аргумента ref_image в make_card
+        #       прокинуть его в generate_image_file_genapi(sentence_de, ref_image=ref_image)
         img_path = image_mod.generate_image_file_genapi(sentence_de) or ""
     elif provider == "none":
         img_path = ""
