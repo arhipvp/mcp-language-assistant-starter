@@ -37,7 +37,6 @@ def check_health() -> Dict[str, Dict[str, Any]]:
 
     return {
         "openrouter_text": _check_openrouter(settings.OPENROUTER_TEXT_MODEL),
-        "openrouter_image": _check_openrouter(settings.OPENROUTER_IMAGE_MODEL),
         "anki": _check_anki(),
     }
 

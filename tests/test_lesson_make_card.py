@@ -7,7 +7,6 @@ def test_make_card_happy_path(monkeypatch):
     # ENV для прохождения внутренних проверок
     monkeypatch.setenv("OPENROUTER_API_KEY", "x")
     monkeypatch.setenv("OPENROUTER_TEXT_MODEL", "x")
-    monkeypatch.setenv("OPENROUTER_IMAGE_MODEL", "x")
     monkeypatch.setenv("ANKI_DECK", "Deck")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "x")
     monkeypatch.setenv("GENAPI_API_KEY", "x")
@@ -34,7 +33,7 @@ def test_make_card_happy_path(monkeypatch):
 
     result = lesson.make_card("Hund", "de", "Deck", "tag")
 
-    assert set(result) == {"note_id", "front", "back", "image"}
+    assert set(result) == {"note_id", "front", "back", "image", "message"}
     assert result["note_id"] == 123
     assert result["front"] == "Hund"
     assert (
@@ -42,3 +41,4 @@ def test_make_card_happy_path(monkeypatch):
         == "<div>Перевод: Собака спит</div><div>Satz: Der Hund schläft.</div>"
     )
     assert result["image"] == ""
+    assert result["message"] == "Карточка создана без изображения"

@@ -1,11 +1,10 @@
 import importlib
 import pytest
-
+import importlib
 
 _BASE_ENV = {
     "OPENROUTER_API_KEY": "k",
     "OPENROUTER_TEXT_MODEL": "t",
-    "OPENROUTER_IMAGE_MODEL": "i",
     "ANKI_DECK": "d",
     "TELEGRAM_BOT_TOKEN": "x",
     "GENAPI_API_KEY": "g",
@@ -37,9 +36,9 @@ def test_invalid_values(monkeypatch):
 
 def test_default_and_normalization(monkeypatch):
     mod = _load(monkeypatch, None)
-    assert mod.settings.GENAPI_QUALITY == "high"
+    assert mod.settings.GENAPI_QUALITY == "low"
     mod = _load(monkeypatch, "")
-    assert mod.settings.GENAPI_QUALITY == "high"
+    assert mod.settings.GENAPI_QUALITY == "low"
     mod = _load(monkeypatch, "HIGH")
     assert mod.settings.GENAPI_QUALITY == "high"
 

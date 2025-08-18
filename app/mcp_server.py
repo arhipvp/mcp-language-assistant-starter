@@ -26,6 +26,7 @@ from .tools.anki_tool import add_basic_note
 from .tools.health import check_health
 from .orchestration.pipeline import LessonConfig, build_lesson
 from .mcp_tools.lesson import make_card as make_lesson_card
+from .mcp_tools.health_genapi import genapi_check
 
 from .settings import settings  # noqa: F401  - trigger config loading
 
@@ -84,6 +85,10 @@ def create_server() -> "mcp.server.FastMCP":  # type: ignore[return-type]
     async def server_health() -> dict:
         return check_health()
 
+    @log_tool(server, "health.genapi_check")
+    async def health_genapi_check_tool() -> dict:
+        return genapi_check()
+
     return server
 
 
@@ -107,6 +112,7 @@ def list_tools() -> Dict[str, dict]:
             "returns": "dict",
         },
         "server.health": {"args": [], "returns": "dict"},
+        "health.genapi_check": {"args": [], "returns": "dict"},
     }
 
 
