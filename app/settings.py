@@ -19,6 +19,9 @@ class Settings(BaseModel):
     ANKI_DECK: str
     ANKI_TAG: str = "tg-auto"
     TELEGRAM_BOT_TOKEN: str
+    TEXT_MAX_RETRIES: int = 3
+    IMAGE_MAX_RETRIES: int = 3
+    GENERATION_DELAY_MS: int = 0
 
 
 def _load_settings() -> Settings:
@@ -31,6 +34,9 @@ def _load_settings() -> Settings:
             "ANKI_DECK": os.environ["ANKI_DECK"],
             "ANKI_TAG": os.environ.get("ANKI_TAG", "tg-auto"),
             "TELEGRAM_BOT_TOKEN": os.environ["TELEGRAM_BOT_TOKEN"],
+            "TEXT_MAX_RETRIES": int(os.environ.get("TEXT_MAX_RETRIES", 3)),
+            "IMAGE_MAX_RETRIES": int(os.environ.get("IMAGE_MAX_RETRIES", 3)),
+            "GENERATION_DELAY_MS": int(os.environ.get("GENERATION_DELAY_MS", 0)),
         }
     except KeyError as e:  # pragma: no cover - simple error path
         raise RuntimeError(f"Missing required environment variable: {e.args[0]}") from None
