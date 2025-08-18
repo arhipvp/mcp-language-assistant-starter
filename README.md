@@ -60,6 +60,18 @@ DEEPL_API_KEY=...
 OPENAI_API_KEY=...
 ```
 
+## n8n workflow
+
+Готовый workflow лежит в `examples/n8n-word-to-telegram.json`.
+
+1. Запустите n8n, передав переменные окружения:
+   - `TELEGRAM_BOT_TOKEN` — токен бота Telegram.
+   - `MCP_BASE_URL` — адрес MCP‑прокси или локального stdio‑bridge.
+2. В интерфейсе n8n выберите **Import from File** и загрузите `examples/n8n-word-to-telegram.json`.
+3. Откройте узлы **Send Photo** и **Send Text** и укажите `chatId` чата, куда слать карточки.
+4. Активируйте workflow. Webhook будет доступен по адресу `http://<host>/webhook/word`.
+5. Отправьте POST с JSON `{"word": "Haus"}` — в Telegram придёт текст и фото (если найдено).
+
 ## Тесты
 
 ```bash
