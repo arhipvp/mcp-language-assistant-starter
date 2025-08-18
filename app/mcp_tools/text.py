@@ -1,7 +1,9 @@
 """Text-related MCP tools."""
 from __future__ import annotations
 
+import logging
 import re
+import time
 from typing import Any, Dict, List
 
 from app.net.http import NetworkError, request_json
@@ -116,28 +118,61 @@ def _includes_target(word_de: str, sentence_de: str) -> bool:
     return re.search(rf"\b{re.escape(word)}\b", sent) is not None
 
 
+# ── logging ───────────────────────────────────────────────────────────────────
+logger = logging.getLogger(__name__)
+
+
 # ── public API ────────────────────────────────────────────────────────────────
 def generate_sentence(word_de: str) -> str:
     """Generate a single B1-level German sentence containing `word_de`."""
+    logger.info("start", extra={"step": "text.generate"})
+    start = time.perf_counter()
     messages: List[Dict[str, str]] = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": word_de},
     ]
     last: str = ""
-    for _ in range(3):
-        out = _chat(messages)
-        cleaned = _clean_line(out)
-        if _includes_target(word_de, cleaned):
-            return cleaned
-        last = cleaned
-    raise NetworkError("validation", "target word missing", {"word": word_de, "sentence": last})
+    try:
+        for _ in range(3):
+            out = _chat(messages)
+            cleaned = _clean_line(out)
+            if _includes_target(word_de, cleaned):
+                lat_ms = int((time.perf_counter() - start) * 1000)
+                logger.info(
+                    "ok",
+                    extra={
+                        "step": "text.generate",
+                        "lat_ms": lat_ms,
+                        "outlen": len(cleaned),
+                    },
+                )
+                return cleaned
+            last = cleaned
+    except Exception:
+        logger.error("error", exc_info=True, extra={"step": "text.generate"})
+        raise
+    raise NetworkError(
+        "validation", "target word missing", {"word": word_de, "sentence": last}
+    )
 
 
 def translate_text(text: str, src: str, tgt: str) -> str:
     """Translate `text` from `src` to `tgt` (e.g., 'de'↔'ru'). Returns translation only."""
+    logger.info("start", extra={"step": "text.translate"})
+    start = time.perf_counter()
     messages = [
         {"role": "system", "content": f"Translate to {tgt}. Output only the translation."},
         {"role": "user", "content": text},
     ]
-    out = _chat(messages)
-    return _clean_line(out)
+    try:
+        out = _chat(messages)
+        cleaned = _clean_line(out)
+        lat_ms = int((time.perf_counter() - start) * 1000)
+        logger.info(
+            "ok",
+            extra={"step": "text.translate", "lat_ms": lat_ms, "outlen": len(cleaned)},
+        )
+        return cleaned
+    except Exception:
+        logger.error("error", exc_info=True, extra={"step": "text.translate"})
+        raise

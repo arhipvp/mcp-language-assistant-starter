@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import logging
 import time
 from pathlib import Path
 from typing import Any, Dict
@@ -15,6 +16,8 @@ IMAGES_URL = "https://openrouter.ai/api/v1/images"
 
 MEDIA_DIR = Path("media")
 MEDIA_DIR.mkdir(exist_ok=True)
+
+logger = logging.getLogger(__name__)
 
 
 class ImageMeta(Dict[str, str]):
@@ -44,8 +47,11 @@ def generate_image_file(sentence_de: str) -> ImageMeta | str:
     On success returns :class:`ImageMeta` with deterministic name and metadata.
     On any failure returns an empty string.
     """
+    logger.info("start", extra={"step": "image.generate"})
+    start = time.perf_counter()
     model = settings.OPENROUTER_IMAGE_MODEL
     if not settings.OPENROUTER_API_KEY or not model:
+        logger.warning("skip", extra={"step": "image.generate"})
         return ""
 
     hash_input = f"{sentence_de}{model}".encode("utf-8")
@@ -53,20 +59,22 @@ def generate_image_file(sentence_de: str) -> ImageMeta | str:
     out_path = MEDIA_DIR / f"img_{hash_hex}.png"
 
     if out_path.exists():
+        lat_ms = int((time.perf_counter() - start) * 1000)
+        logger.info("ok", extra={"step": "image.generate", "lat_ms": lat_ms, "outlen": 0})
         return ImageMeta(str(out_path), hash_hex, model)
 
     headers = {"Authorization": f"Bearer {settings.OPENROUTER_API_KEY}"}
     payload: dict[str, Any] = {"model": model, "prompt": _build_prompt(sentence_de)}
 
     try:
-        data = request_json("POST", IMAGES_URL, headers=headers, json=payload, timeout=60).get(
-            "data"
-        )
+        data = request_json(
+            "POST", IMAGES_URL, headers=headers, json=payload, timeout=60
+        ).get("data")
         if not data:
             raise ValueError("Empty data from image API")
 
         item = data[0]
-        # предпочтительно b64_json, но поддержим и прямую ссылку
+        # предпочтительно б64_json, но поддержим и прямую ссылку
         if "b64_json" in item and item["b64_json"]:
             img_bytes = base64.b64decode(item["b64_json"])
         elif "url" in item and item["url"]:
@@ -77,8 +85,14 @@ def generate_image_file(sentence_de: str) -> ImageMeta | str:
             raise ValueError("No image payload (b64_json/url) in response")
 
         out_path.write_bytes(img_bytes)
+        lat_ms = int((time.perf_counter() - start) * 1000)
+        logger.info(
+            "ok",
+            extra={"step": "image.generate", "lat_ms": lat_ms, "outlen": len(img_bytes)},
+        )
         return ImageMeta(str(out_path), hash_hex, model)
     except Exception:
+        logger.error("error", exc_info=True, extra={"step": "image.generate"})
         return ""
 
 
@@ -88,4 +102,6 @@ def generate_image_file_genapi(sentence_de: str) -> ImageMeta | str:
     This is a placeholder implementation; network calls are expected to be
     mocked in tests. On any failure returns an empty string.
     """
+    logger.info("start", extra={"step": "image.generate"})
+    logger.warning("skip", extra={"step": "image.generate"})
     return ""
