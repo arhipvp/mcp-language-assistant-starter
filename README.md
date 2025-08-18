@@ -99,6 +99,11 @@ OPENAI_API_KEY=...
 pytest
 ```
 
+## Дополнительная документация
+
+- [Inspector](docs/INSPECTOR.md)
+- [n8n](docs/N8N.md)
+
 ---
 
 Сделано для быстрых экспериментов.

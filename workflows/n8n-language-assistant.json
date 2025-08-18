@@ -1,0 +1,80 @@
+{
+  "name": "Language Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "assistant",
+        "method": "POST",
+        "responseMode": "onReceived"
+      },
+      "id": "1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.MCP_PROXY_URL}}",
+        "responseFormat": "json",
+        "jsonParameters": true,
+        "bodyParametersJson": "={\"tool\": \"lesson.make_card\", \"args\": {\"word\": $json[\"word\"], \"lang\": \"de\", \"deck\": \"Demo::Deck\", \"tag\": \"n8n\"}}"
+      },
+      "id": "2",
+      "name": "MCP Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{$env.TELEGRAM_CHAT_ID}}",
+        "text": "={{$json.note_id}}"
+      },
+      "id": "3",
+      "name": "Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "credentials": {
+        "telegramApi": {
+          "apiToken": "={{$env.TELEGRAM_BOT_TOKEN}}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "MCP Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Call": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
