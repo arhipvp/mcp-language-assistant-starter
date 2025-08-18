@@ -39,6 +39,27 @@ python -m app.cli build-lesson --text "Hallo Welt, wir sprechen freundlich." \
 python -m app.mcp_server
 ```
 
+### Как протестировать MCP через Inspector
+
+1. Убедитесь, что установлен Node.js.
+2. Запустите инспектор, который сам поднимет сервер через stdio:
+
+   ```bash
+   npx @modelcontextprotocol/inspector --stdio "python -m app.mcp_server"
+   ```
+
+   После запуска откройте страницу, указанную в терминале (обычно `http://localhost:5173`).
+
+3. Через веб‑интерфейс вызовите инструменты, например:
+
+   - `lesson.make_card` — создаёт карточку в Anki.
+   - `server.health` — проверяет окружение и доступность AnkiConnect.
+
+#### Health‑check и типовые ошибки
+
+- Если нет файла `.env`, `server.health` вернёт `"env": false`.
+- Если AnkiConnect недоступен, поле `"anki"` будет `false`, а в `"error"` появится сообщение соединения (например `Connection refused`).
+
 Запуск Telegram-бота:
 
 ```bash

@@ -68,7 +68,6 @@ def create_server() -> "Server":  # type: ignore[return-type]
 
     @log_tool(server, "lesson.make_card")
     async def lesson_make_card_tool(word: str, lang: str, deck: str, tag: str) -> dict:
-        # единая точка вызова для создания карточки
         return make_lesson_card(word, lang, deck, tag)
 
     @server.tool("server.health")
