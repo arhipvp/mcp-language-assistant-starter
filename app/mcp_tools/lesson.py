@@ -14,6 +14,36 @@ def _detect_lang(text: str) -> str:
     return "ru" if _CYRILLIC_RE.search(text) else "de"
 
 
+def generate_sentence(word: str) -> str:
+    text_mod = importlib.import_module("app.mcp_tools.text")
+    return getattr(text_mod, "generate_sentence")(word)
+
+
+def translate_text(text: str, src: str, tgt: str) -> str:
+    text_mod = importlib.import_module("app.mcp_tools.text")
+    return getattr(text_mod, "translate_text")(text, src, tgt)
+
+
+def generate_image_file(sentence: str) -> str:
+    image_mod = importlib.import_module("app.mcp_tools.image")
+    gen = getattr(image_mod, "generate_image_file")
+    return gen(sentence)
+
+
+def generate_image_file_genapi(sentence: str) -> str:
+    image_mod = importlib.import_module("app.mcp_tools.image")
+    gen = getattr(image_mod, "generate_image_file_genapi", None)
+    if gen:
+        return gen(sentence)
+    return ""
+
+
+def add_anki_note(**kwargs) -> int:
+    anki_mod = importlib.import_module("app.mcp_tools.anki")
+    add_note = getattr(anki_mod, "add_anki_note")
+    return add_note(**kwargs)
+
+
 def make_card(
     word: str,
     lang: Optional[str],
@@ -28,14 +58,9 @@ def make_card(
 
     Если картинка не сгенерировалась — карточка всё равно создаётся.
     """
-    # Динамические импорты, чтобы тесты могли подменять модули через sys.modules
-    text_mod = importlib.import_module("app.mcp_tools.text")
-    image_mod = importlib.import_module("app.mcp_tools.image")
-    anki_mod = importlib.import_module("app.mcp_tools.anki")
-
-    gen_sentence = getattr(text_mod, "generate_sentence")
-    translate = getattr(text_mod, "translate_text")
-    add_note = getattr(anki_mod, "add_anki_note")
+    gen_sentence = generate_sentence
+    translate = translate_text
+    add_note = add_anki_note
 
     # 1) Определяем язык входа
     in_lang = (lang or "").strip().lower() or _detect_lang(word)
@@ -55,15 +80,14 @@ def make_card(
 
     # 5) Пытаемся сгенерировать картинку (может вернуть пустую строку)
     provider = os.getenv("IMAGE_PROVIDER", "openrouter").strip().lower()
-    if provider == "genapi" and hasattr(image_mod, "generate_image_file_genapi"):
+    if provider == "genapi":
         # TODO: при добавлении аргумента ref_image в make_card
         #       прокинуть его в generate_image_file_genapi(sentence_de, ref_image=ref_image)
-        img_path = image_mod.generate_image_file_genapi(sentence_de) or ""
+        img_path = generate_image_file_genapi(sentence_de) or ""
     elif provider == "none":
         img_path = ""
     else:  # по умолчанию — openrouter (или неизвестный провайдер)
-        gen_image = getattr(image_mod, "generate_image_file")
-        img_path = gen_image(sentence_de) or ""
+        img_path = generate_image_file(sentence_de) or ""
 
     # 6) Формируем Back (без <img>; его пришьёт add_anki_note, если media_path передан)
     back_html = (

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, Tuple
 
 import requests
+from app.settings import settings
 
 # external client functions; they will be patched in tests
 try:  # pragma: no cover - optional dependency
@@ -124,9 +125,16 @@ def generate_image_file_genapi(
 
     prompt = f"Иллюстрируй смысл простого немецкого предложения без текста: {sentence_de}"
 
-    kwargs: Dict[str, Any] = {"model_id": model_id, "prompt": prompt, "is_sync": is_sync}
+    quality = settings.GENAPI_QUALITY
+    kwargs: Dict[str, Any] = {
+        "model_id": model_id,
+        "prompt": prompt,
+        "is_sync": is_sync,
+        "quality": quality,
+    }
     if callback_url:
         kwargs["callback_url"] = callback_url
+    logger.info("image.gen: model=%s quality=%s", model_id, quality)
 
     # reference image handling
     ref_payload: Dict[str, str] = {}

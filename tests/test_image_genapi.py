@@ -7,6 +7,7 @@ os.environ.setdefault("OPENROUTER_TEXT_MODEL","m")
 os.environ.setdefault("OPENROUTER_IMAGE_MODEL","m")
 os.environ.setdefault("ANKI_DECK","d")
 os.environ.setdefault("TELEGRAM_BOT_TOKEN","t")
+os.environ.setdefault("GENAPI_API_KEY","g")
 
 from app.mcp_tools import image_genapi
 

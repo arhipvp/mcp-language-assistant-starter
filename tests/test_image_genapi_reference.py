@@ -94,6 +94,18 @@ def test_reference_bytes(monkeypatch, tmp_path):
     assert recorder["image_b64"] == expected
 
 
+def test_quality_param(monkeypatch, tmp_path):
+    _setup_env(monkeypatch, tmp_path)
+    recorder = {}
+    _fake_create(monkeypatch, _dummy_resp_bytes(), recorder)
+    monkeypatch.setattr(
+        image_genapi, "settings", type("S", (), {"GENAPI_QUALITY": "medium"})()
+    )
+    path = image_genapi.generate_image_file_genapi("Hallo")
+    assert Path(path).exists()
+    assert recorder["quality"] == "medium"
+
+
 def test_reference_size_limit(monkeypatch, tmp_path, caplog):
     _setup_env(monkeypatch, tmp_path)
     monkeypatch.setenv("GENAPI_ALLOWED_IMAGE_TYPES", "image/png")

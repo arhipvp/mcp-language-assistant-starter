@@ -4,13 +4,18 @@ from __future__ import annotations
 import os
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, ValidationError
+from typing import Literal
+from pydantic import BaseModel, ValidationError, field_validator
 
 load_dotenv()
 
 
 class Settings(BaseModel):
-    """Central application settings."""
+    """Central application settings.
+
+    Параметр ``GENAPI_QUALITY`` управляет качеством и стоимостью
+    генерации изображений через GenAPI.
+    """
 
     OPENROUTER_API_KEY: str
     OPENROUTER_TEXT_MODEL: str
@@ -33,6 +38,17 @@ class Settings(BaseModel):
     GENAPI_MAX_RETRIES: str = "3"
     GENAPI_MAX_IMAGE_BYTES: str = "5242880"
     GENAPI_ALLOWED_IMAGE_TYPES: str = "image/png,image/jpeg,image/webp"
+    GENAPI_QUALITY: Literal["high", "medium", "low"] = "high"
+
+    @field_validator("GENAPI_QUALITY", mode="before")
+    @classmethod
+    def _validate_quality(cls, v: str | None) -> str:
+        if not v:
+            return "high"
+        v = v.lower()
+        if v in {"high", "medium", "low"}:
+            return v
+        raise ValueError("GENAPI_QUALITY must be one of: high, medium, low")
 
 
 def _load_settings() -> Settings:
@@ -71,6 +87,7 @@ def _load_settings() -> Settings:
             "GENAPI_ALLOWED_IMAGE_TYPES": os.environ.get(
                 "GENAPI_ALLOWED_IMAGE_TYPES", "image/png,image/jpeg,image/webp"
             ),
+            "GENAPI_QUALITY": (os.environ.get("GENAPI_QUALITY") or "high"),
         }
     except KeyError as e:  # pragma: no cover - simple error path
         raise RuntimeError(f"Missing required environment variable: {e.args[0]}") from None
