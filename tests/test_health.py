@@ -25,6 +25,7 @@ def base_env():
         "ANKI_DECK": "deck",
         "TELEGRAM_BOT_TOKEN": "token",
         "ANKI_CONNECT_URL": "http://anki",
+        "GENAPI_API_KEY": "sk-genapi",
     }
 
 

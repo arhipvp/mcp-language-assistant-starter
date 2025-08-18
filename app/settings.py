@@ -22,6 +22,15 @@ class Settings(BaseModel):
     TEXT_MAX_RETRIES: int = 3
     IMAGE_MAX_RETRIES: int = 3
     GENERATION_DELAY_MS: int = 0
+    GENAPI_API_KEY: str
+    GENAPI_MODEL_ID: str = "gpt-image-1"
+    GENAPI_BASE_URL: str = "https://api.gen-api.ru"
+    GENAPI_IS_SYNC: str = "false"
+    GENAPI_POLL_INTERVAL_MS: str = "1200"
+    GENAPI_POLL_TIMEOUT_MS: str = "60000"
+    GENAPI_CALLBACK_URL: str = ""
+    GENAPI_REQUEST_TIMEOUT_S: str = "30"
+    GENAPI_MAX_RETRIES: str = "3"
 
 
 def _load_settings() -> Settings:
@@ -37,6 +46,23 @@ def _load_settings() -> Settings:
             "TEXT_MAX_RETRIES": int(os.environ.get("TEXT_MAX_RETRIES", 3)),
             "IMAGE_MAX_RETRIES": int(os.environ.get("IMAGE_MAX_RETRIES", 3)),
             "GENERATION_DELAY_MS": int(os.environ.get("GENERATION_DELAY_MS", 0)),
+            "GENAPI_API_KEY": os.environ["GENAPI_API_KEY"],
+            "GENAPI_MODEL_ID": os.environ.get("GENAPI_MODEL_ID", "gpt-image-1"),
+            "GENAPI_BASE_URL": os.environ.get(
+                "GENAPI_BASE_URL", "https://api.gen-api.ru"
+            ),
+            "GENAPI_IS_SYNC": os.environ.get("GENAPI_IS_SYNC", "false"),
+            "GENAPI_POLL_INTERVAL_MS": os.environ.get(
+                "GENAPI_POLL_INTERVAL_MS", "1200"
+            ),
+            "GENAPI_POLL_TIMEOUT_MS": os.environ.get(
+                "GENAPI_POLL_TIMEOUT_MS", "60000"
+            ),
+            "GENAPI_CALLBACK_URL": os.environ.get("GENAPI_CALLBACK_URL", ""),
+            "GENAPI_REQUEST_TIMEOUT_S": os.environ.get(
+                "GENAPI_REQUEST_TIMEOUT_S", "30"
+            ),
+            "GENAPI_MAX_RETRIES": os.environ.get("GENAPI_MAX_RETRIES", "3"),
         }
     except KeyError as e:  # pragma: no cover - simple error path
         raise RuntimeError(f"Missing required environment variable: {e.args[0]}") from None
