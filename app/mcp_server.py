@@ -19,7 +19,7 @@ from .tools.yt_transcript import fetch_transcript
 from .tools.cefr_level import extract_vocab
 from .tools.grammar import check_text
 from .tools.tts import speak_to_file
-from .tools.anki_tool import add_basic_note
+from .tools.anki_tool import add_basic_note, ANKI_URL
 from .orchestration.pipeline import LessonConfig, build_lesson
 from .mcp_tools.lesson import make_card as make_lesson_card
 
@@ -69,6 +69,21 @@ def create_server() -> "Server":  # type: ignore[return-type]
         # единая точка вызова для создания карточки
         return make_lesson_card(word, lang, deck, tag)
 
+    @server.tool("server.health")
+    async def server_health() -> dict:
+        import os
+        import requests
+
+        env_ok = os.path.exists(".env")
+        try:
+            requests.post(ANKI_URL, json={"action": "version", "version": 6}, timeout=5)
+            anki_ok = True
+            err: str | None = None
+        except Exception as exc:  # pragma: no cover - network
+            anki_ok = False
+            err = str(exc)
+        return {"env": env_ok, "anki": anki_ok, "error": err}
+
     return server
 
 
@@ -91,6 +106,7 @@ def list_tools() -> Dict[str, dict]:
             "args": ["word: str", "lang: str", "deck: str", "tag: str"],
             "returns": "dict",
         },
+        "server.health": {"args": [], "returns": "dict"},
     }
 
 
