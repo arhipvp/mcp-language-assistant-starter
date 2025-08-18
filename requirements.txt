@@ -1,10 +1,10 @@
-
 typer>=0.12
 pydantic>=2.8
 requests>=2.32
 python-dotenv>=1.0
 youtube-transcript-api>=0.6
+edge-tts>=6.1.12
+pytest>=8.0
 # Optional / suggested:
 # language-tool-python>=2.7.1  # if you prefer the client wrapper
-# edge-tts>=6.1.12             # or coqui-tts / TTS
 # fastapi>=0.112 uvicorn>=0.30 # if you want a web API surface

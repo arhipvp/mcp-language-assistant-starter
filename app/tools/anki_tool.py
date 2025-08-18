@@ -1,12 +1,13 @@
-
-import os, json, requests
-from typing import List
+import os
+import requests
+from typing import List, Optional
 from dotenv import load_dotenv
 
 load_dotenv()
 ANKI_URL = os.getenv("ANKI_CONNECT_URL", "http://127.0.0.1:8765")
 
-def _invoke(action, **params):
+
+def _invoke(action: str, **params):
     payload = {"action": action, "version": 6, "params": params}
     r = requests.post(ANKI_URL, json=payload, timeout=15)
     r.raise_for_status()
@@ -15,7 +16,15 @@ def _invoke(action, **params):
         raise RuntimeError(out["error"])
     return out["result"]
 
-def add_basic_note(front: str, back: str, deck: str, tags: List[str] = None) -> int:
+
+def add_basic_note(
+    front: str,
+    back: str,
+    deck: str,
+    tags: Optional[List[str]] = None,
+    audio_path: Optional[str] = None,
+) -> int:
+    """Add a basic Anki note with optional audio attachment."""
     tags = tags or []
     note = {
         "deckName": deck,
@@ -23,4 +32,12 @@ def add_basic_note(front: str, back: str, deck: str, tags: List[str] = None) -> 
         "fields": {"Front": front, "Back": back},
         "tags": tags,
     }
+    if audio_path:
+        note["audio"] = [
+            {
+                "path": audio_path,
+                "filename": os.path.basename(audio_path),
+                "fields": ["Back"],
+            }
+        ]
     return _invoke("addNote", note=note)
