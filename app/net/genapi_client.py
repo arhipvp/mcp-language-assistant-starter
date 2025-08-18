@@ -1,5 +1,6 @@
 import logging
 import time
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 import requests
@@ -96,6 +97,9 @@ class GenAPIClient:
         is_sync: bool,
         callback_url: Optional[str] = None,
         extra: Optional[Dict[str, Any]] = None,
+        ref_image_url: str | None = None,
+        ref_image_b64: str | None = None,
+        ref_image_path: str | None = None,
     ) -> Dict[str, Any]:
         url = f"{self.BASE_URL}{self.NETWORKS_PATH.format(model_id=model_id)}"
         payload: Dict[str, Any] = {"prompt": prompt, "is_sync": is_sync}
@@ -104,7 +108,40 @@ class GenAPIClient:
         if extra:
             payload.update(extra)
 
-        response = requests.post(url, json=payload, headers=self.base_headers, timeout=self.timeout)
+        sources = [ref_image_url, ref_image_b64, ref_image_path]
+        if sum(1 for s in sources if s) > 1:
+            logger.error(
+                "Multiple reference image sources provided",
+                extra={
+                    "ref_image_url": ref_image_url,
+                    "ref_image_b64": ref_image_b64,
+                    "ref_image_path": ref_image_path,
+                },
+            )
+            raise ValueError("Only one reference image source can be used")
+
+        if ref_image_path:
+            data = {k: str(v) for k, v in payload.items()}
+            with open(ref_image_path, "rb") as fh:
+                files = {"image": (Path(ref_image_path).name, fh)}
+                response = requests.post(
+                    url,
+                    headers=self.base_headers,
+                    data=data,
+                    files=files,
+                    timeout=self.timeout,
+                )
+        else:
+            if ref_image_url:
+                payload["image_url"] = ref_image_url
+            elif ref_image_b64:
+                payload["image_b64"] = ref_image_b64
+            response = requests.post(
+                url,
+                json=payload,
+                headers=self.base_headers,
+                timeout=self.timeout,
+            )
         if response.status_code in _ERROR_MAP:
             raise _ERROR_MAP[response.status_code](
                 "HTTP error",
