@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import requests
 from dotenv import load_dotenv
@@ -42,6 +42,30 @@ def _extract_content(resp: Any) -> str:
                     return message["content"]
         if isinstance(resp.get("text"), str):
             return resp["text"]
+    # try generic attribute-style SDKs
+    content = getattr(resp, "content", None)
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = [
+            part.get("text", "") if isinstance(part, dict) else str(part)
+            for part in content
+        ]
+        return "".join(parts)
+    choices = getattr(resp, "choices", None)
+    if choices:
+        first = choices[0]
+        message = getattr(first, "message", None)
+        if isinstance(message, dict):
+            msg_content = message.get("content", "")
+        else:
+            msg_content = getattr(message, "content", "")
+        if isinstance(msg_content, list):
+            msg_content = "".join(
+                part.get("text", "") if isinstance(part, dict) else str(part)
+                for part in msg_content
+            )
+        return str(msg_content)
     return str(resp)
 
 
@@ -58,7 +82,7 @@ def _chat_openrouter(messages: List[dict]) -> str:
             resp = requests.post(CHAT_URL, headers=headers, json=payload, timeout=30)
             resp.raise_for_status()
             data = resp.json()
-            return _extract_content(data)
+            return _extract_content(data).strip()
         except Exception:
             if attempt == 2:
                 raise
@@ -92,11 +116,10 @@ def generate_sentence(word_de: str) -> str:
 
 
 def translate_text(text: str, src: str, tgt: str) -> str:
-    """Translate `text` from `src` to `tgt` (e.g., 'de'↔'ru')."""
-    # Keep system brief to avoid explanations
+    """Translate `text` from `src` to `tgt` (e.g., 'de'↔'ru'). Returns translation only."""
     messages = [
-        {"role": "system", "content": "You are a precise DE↔RU translation assistant. Reply with translation only."},
-        {"role": "user", "content": f"Translate from {src} to {tgt}: {text}"},
+        {"role": "system", "content": f"Translate to {tgt}. Output only the translation."},
+        {"role": "user", "content": text},
     ]
     out = _chat(messages)
     return _clean_line(out)
