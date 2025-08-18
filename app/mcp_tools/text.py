@@ -65,8 +65,8 @@ def _extract_content(resp: Any) -> str:
     return str(resp)
 
 
-def _chat_openrouter(messages: List[dict]) -> str:
-    """Fallback chat via OpenRouter."""
+def _chat_openrouter(messages: List[dict]) -> Dict[str, Any]:
+    """Fallback chat via OpenRouter using our generic JSON client."""
     api_key = settings.OPENROUTER_API_KEY
     model = settings.OPENROUTER_TEXT_MODEL
     missing = []
@@ -80,16 +80,17 @@ def _chat_openrouter(messages: List[dict]) -> str:
     headers = {"Authorization": f"Bearer {api_key}"}
     payload = {"model": model, "messages": messages}
 
-    data = request_json("POST", CHAT_URL, headers=headers, json=payload, timeout=30)
-    return _extract_content(data).strip()
+    # keep the call local and reusable; _chat() will extract text content
+    return request_json("POST", CHAT_URL, headers=headers, json=payload, timeout=30)
 
 
 def _chat(messages: List[dict]) -> str:
     """Unified chat: prefer local llm_text, else OpenRouter fallback."""
     if llm_text is not None:
         resp = llm_text.chat(messages)  # type: ignore[attr-defined]
-        return _extract_content(resp).strip()
-    return _chat_openrouter(messages).strip()
+    else:
+        resp = _chat_openrouter(messages)
+    return _extract_content(resp).strip()
 
 
 def _clean_line(text: str) -> str:
