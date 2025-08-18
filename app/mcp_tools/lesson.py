@@ -4,10 +4,12 @@ import os
 import re
 from typing import Dict, Optional
 
-# Основные инструменты (ранее тобой объединённые модули)
-from .text import generate_sentence, translate_text
-from .image import generate_image_file
-from .anki import add_anki_note
+# Основные инструменты импортируются внутри функции `make_card`
+# чтобы тесты могли подменять модули через `sys.modules` без перезагрузки.
+generate_sentence = None  # type: ignore[assignment]
+translate_text = None  # type: ignore[assignment]
+generate_image_file = None  # type: ignore[assignment]
+add_anki_note = None  # type: ignore[assignment]
 
 # Для грубого детекта кириллицы
 _CYRILLIC_RE = re.compile(r"[\u0400-\u04FF]")
@@ -31,6 +33,17 @@ def make_card(
 
     Если картинка не сгенерировалась — карточка всё равно создаётся.
     """
+    import importlib
+
+    text_mod = importlib.import_module("app.mcp_tools.text")
+    image_mod = importlib.import_module("app.mcp_tools.image")
+    anki_mod = importlib.import_module("app.mcp_tools.anki")
+
+    gen_sentence = generate_sentence or text_mod.generate_sentence
+    translate = translate_text or text_mod.translate_text
+    gen_image = generate_image_file or image_mod.generate_image_file
+    add_note = add_anki_note or anki_mod.add_anki_note
+
     # 1) Определяем язык входа
     in_lang = (lang or "").strip().lower() or _detect_lang(word)
 
@@ -39,16 +52,16 @@ def make_card(
         word_de = word
     else:
         # слово было RU → переводим в DE
-        word_de = translate_text(word, "ru", "de")
+        word_de = translate(word, "ru", "de")
 
     # 3) Генерируем B1-предложение с этим словом
-    sentence_de = generate_sentence(word_de)
+    sentence_de = gen_sentence(word_de)
 
     # 4) Переводим предложение на RU (для Back)
-    translation_ru = translate_text(sentence_de, "de", "ru")
+    translation_ru = translate(sentence_de, "de", "ru")
 
     # 5) Пытаемся сгенерировать картинку (может вернуть пустую строку)
-    img_path = generate_image_file(sentence_de) or ""
+    img_path = gen_image(sentence_de) or ""
 
     # 6) Формируем Back (без <img>; его пришьёт add_anki_note, если media_path передан)
     back_html = (
@@ -57,7 +70,7 @@ def make_card(
     )
 
     # 7) Добавляем карточку в Anki
-    note_id = add_anki_note(
+    note_id = add_note(
         front=word_de,
         back_html=back_html,
         deck=deck,
