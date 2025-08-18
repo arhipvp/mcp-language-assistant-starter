@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 
 import requests
 
@@ -16,6 +17,19 @@ MEDIA_DIR = Path("media")
 MEDIA_DIR.mkdir(exist_ok=True)
 
 
+class ImageMeta(Dict[str, str]):
+    """Путь к файлу с метаданными, совместимый с os.PathLike."""
+
+    def __init__(self, path: str, hash_: str, model: str) -> None:
+        super().__init__(path=path, hash=hash_, model=model)
+
+    def __fspath__(self) -> str:  # type: ignore[override]
+        return self["path"]
+
+    def __str__(self) -> str:  # type: ignore[override]
+        return self["path"]
+
+
 def _build_prompt(sentence_de: str) -> str:
     # более надёжный промпт: рисуем смысл, без текста
     return (
@@ -24,20 +38,25 @@ def _build_prompt(sentence_de: str) -> str:
     )
 
 
-def generate_image_file(sentence_de: str) -> str:
-    """Generate and save an image (PNG) that illustrates a simple German sentence.
+def generate_image_file(sentence_de: str) -> ImageMeta | str:
+    """Generate and save an image (PNG) illustrating a German sentence.
 
-    Credentials are taken from :mod:`app.settings`. Returns the path to the
-    saved image on success or an empty string on any failure.
+    On success returns :class:`ImageMeta` with deterministic name and metadata.
+    On any failure returns an empty string.
     """
-    if not settings.OPENROUTER_API_KEY or not settings.OPENROUTER_IMAGE_MODEL:
+    model = settings.OPENROUTER_IMAGE_MODEL
+    if not settings.OPENROUTER_API_KEY or not model:
         return ""
 
+    hash_input = f"{sentence_de}{model}".encode("utf-8")
+    hash_hex = hashlib.sha1(hash_input).hexdigest()
+    out_path = MEDIA_DIR / f"img_{hash_hex}.png"
+
+    if out_path.exists():
+        return ImageMeta(str(out_path), hash_hex, model)
+
     headers = {"Authorization": f"Bearer {settings.OPENROUTER_API_KEY}"}
-    payload: dict[str, Any] = {
-        "model": settings.OPENROUTER_IMAGE_MODEL,
-        "prompt": _build_prompt(sentence_de),
-    }
+    payload: dict[str, Any] = {"model": model, "prompt": _build_prompt(sentence_de)}
 
     try:
         data = request_json("POST", IMAGES_URL, headers=headers, json=payload, timeout=60).get(
@@ -57,11 +76,7 @@ def generate_image_file(sentence_de: str) -> str:
         else:
             raise ValueError("No image payload (b64_json/url) in response")
 
-        # стабильное имя + защита от коллизий
-        timestamp = int(time.time())
-        safe_hash = abs(hash(sentence_de)) % (10**12)
-        out_path = MEDIA_DIR / f"img_{safe_hash}_{timestamp}.png"
         out_path.write_bytes(img_bytes)
-        return str(out_path)
+        return ImageMeta(str(out_path), hash_hex, model)
     except Exception:
         return ""
