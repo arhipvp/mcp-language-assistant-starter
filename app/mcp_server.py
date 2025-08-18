@@ -1,19 +1,20 @@
 """Minimal MCP server wiring the language tools together.
 
 The implementation is intentionally lightweight and only depends on the
-`anthropic-mcp` package if it is available. When the SDK is missing the
+`mcp` package if it is available. When the SDK is missing the
 module still exposes a :func:`list_tools` helper so that downstream code
 can introspect the offered capabilities.
 """
 from __future__ import annotations
 
 import asyncio
-from typing import Dict, List
+import logging
+from typing import Dict
 
 try:  # pragma: no cover - optional dependency
-    from mcp.server.server import Server
+    import mcp
 except Exception:  # pragma: no cover
-    Server = None  # type: ignore
+    mcp = None  # type: ignore
 
 from .tools.yt_transcript import fetch_transcript
 from .tools.cefr_level import extract_vocab
@@ -38,12 +39,15 @@ def lesson_make_card(word: str, lang: str, deck: str, tag: str) -> dict:
     return make_lesson_card(word, lang, deck, tag)
 
 
-def create_server() -> "Server":  # type: ignore[return-type]
+def create_server() -> "mcp.server.FastMCP":  # type: ignore[return-type]
     """Create the MCP server and register all tools."""
-    if Server is None:
-        raise RuntimeError("anthropic-mcp SDK is not installed")
+    if mcp is None:
+        raise RuntimeError("MCP SDK ('mcp') is not installed. Run: pip install mcp")
 
-    server = Server("language-assistant")
+    logger = logging.getLogger(__name__)
+    logger.info("MCP version: %s", getattr(mcp, "__version__", "unknown"))
+
+    server = mcp.server.FastMCP("language-assistant")
 
     @log_tool(server, "transcript.get")
     async def transcript_get(url: str) -> str:
@@ -62,7 +66,7 @@ def create_server() -> "Server":  # type: ignore[return-type]
         return speak_to_file(text, f"tts_{abs(hash(text))}.mp3", voice=voice)
 
     @log_tool(server, "anki.add_note")
-    async def anki_add_note(front: str, back: str, deck: str, tags: List[str] | None = None):
+    async def anki_add_note(front: str, back: str, deck: str, tags: list[str] | None = None):
         return add_basic_note(front, back, deck, tags=tags)
 
     @log_tool(server, "lesson.build")
@@ -107,7 +111,7 @@ def list_tools() -> Dict[str, dict]:
 async def run() -> None:
     """Entry point used by ``python -m app.mcp_server``."""
     server = create_server()
-    await server.run()
+    await server.run_stdio_async()
 
 
 if __name__ == "__main__":  # pragma: no cover - manual execution only
