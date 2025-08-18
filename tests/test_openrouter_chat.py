@@ -9,7 +9,6 @@ from app.net.http import NetworkError
 def _import_module(monkeypatch):
     monkeypatch.setenv("OPENROUTER_API_KEY", "key")
     monkeypatch.setenv("OPENROUTER_TEXT_MODEL", "m")
-    monkeypatch.setenv("OPENROUTER_IMAGE_MODEL", "img")
     monkeypatch.setenv("ANKI_DECK", "deck")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token")
     # не обязательно для этого модуля, но пусть будет для консистентности окружения

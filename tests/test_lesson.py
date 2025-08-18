@@ -28,5 +28,6 @@ def test_make_card_no_image(monkeypatch):
         "front": "Hund",
         "back": "<div>Перевод: Собака спит</div><div>Satz: Der Hund schläft.</div>",
         "image": "",
+        "message": "Карточка создана без изображения",
     }
     assert params["media_path"] is None
