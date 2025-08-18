@@ -31,6 +31,8 @@ class Settings(BaseModel):
     GENAPI_CALLBACK_URL: str = ""
     GENAPI_REQUEST_TIMEOUT_S: str = "30"
     GENAPI_MAX_RETRIES: str = "3"
+    GENAPI_MAX_IMAGE_BYTES: str = "5242880"
+    GENAPI_ALLOWED_IMAGE_TYPES: str = "image/png,image/jpeg,image/webp"
 
 
 def _load_settings() -> Settings:
@@ -63,6 +65,12 @@ def _load_settings() -> Settings:
                 "GENAPI_REQUEST_TIMEOUT_S", "30"
             ),
             "GENAPI_MAX_RETRIES": os.environ.get("GENAPI_MAX_RETRIES", "3"),
+            "GENAPI_MAX_IMAGE_BYTES": os.environ.get(
+                "GENAPI_MAX_IMAGE_BYTES", "5242880"
+            ),
+            "GENAPI_ALLOWED_IMAGE_TYPES": os.environ.get(
+                "GENAPI_ALLOWED_IMAGE_TYPES", "image/png,image/jpeg,image/webp"
+            ),
         }
     except KeyError as e:  # pragma: no cover - simple error path
         raise RuntimeError(f"Missing required environment variable: {e.args[0]}") from None
