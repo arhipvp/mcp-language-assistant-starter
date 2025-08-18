@@ -39,6 +39,15 @@ python -m app.cli build-lesson --text "Hallo Welt, wir sprechen freundlich." \
 python -m app.mcp_server
 ```
 
+Запуск Telegram-бота:
+
+```bash
+export TELEGRAM_BOT_TOKEN=xxx
+export OPENROUTER_API_KEY=xxx
+export ANKI_CONNECT_URL=http://127.0.0.1:8765
+python -m bot.main
+```
+
 ## Переменные окружения
 
 Создайте файл `.env` и укажите:
