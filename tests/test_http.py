@@ -30,6 +30,7 @@ def test_request_json_success(monkeypatch):
 
 def test_request_json_retry(monkeypatch):
     calls = {"count": 0}
+    sleeps = []
 
     def fake_request(method, url, json=None, headers=None, timeout=None):
         if calls["count"] == 0:
@@ -38,19 +39,22 @@ def test_request_json_retry(monkeypatch):
         return DummyResponse({"ok": True})
 
     monkeypatch.setattr(requests, "request", fake_request)
-    monkeypatch.setattr(time, "sleep", lambda s: None)
+    monkeypatch.setattr(time, "sleep", lambda s: sleeps.append(s))
 
     assert request_json("GET", "http://example.com") == {"ok": True}
+    assert sleeps == [1]
 
 
 def test_request_json_fail(monkeypatch):
     def fake_request(method, url, json=None, headers=None, timeout=None):
         raise requests.RequestException("boom")
 
+    sleeps = []
     monkeypatch.setattr(requests, "request", fake_request)
-    monkeypatch.setattr(time, "sleep", lambda s: None)
+    monkeypatch.setattr(time, "sleep", lambda s: sleeps.append(s))
 
     with pytest.raises(NetworkError) as exc:
         request_json("GET", "http://example.com", retries=3)
 
     assert exc.value.code == "network"
+    assert sleeps == [1, 2]

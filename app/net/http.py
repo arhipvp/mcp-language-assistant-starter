@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 import requests
 
 
-class NetworkError(RuntimeError):
+class NetworkError(Exception):
     """Standard network error with structured details."""
 
     def __init__(self, code: Any, message: str, details: Optional[Dict[str, Any]] = None) -> None:
