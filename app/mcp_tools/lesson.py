@@ -74,11 +74,21 @@ def make_card(
             # слово было RU → переводим в DE
             word_de = translate(word, "ru", "de")
 
+        if not word_de.strip():
+            logger.error("empty fields", extra={"step": "lesson.make_card"})
+            raise EmptyFieldsError("front is empty")
+
         # 3) Генерируем B1-предложение с этим словом
         sentence_de = gen_sentence(word_de)
+        if not sentence_de.strip():
+            logger.error("empty fields", extra={"step": "lesson.make_card"})
+            raise EmptyFieldsError("sentence is empty")
 
         # 4) Переводим предложение на RU (для Back)
         translation_ru = translate(sentence_de, "de", "ru")
+        if not translation_ru.strip():
+            logger.error("empty fields", extra={"step": "lesson.make_card"})
+            raise EmptyFieldsError("translation is empty")
 
         # 5) Пытаемся сгенерировать картинку (может вернуть пустую строку)
         img_path = generate_image_file(sentence_de) or ""
@@ -91,9 +101,9 @@ def make_card(
         if img_path:
             back_html += f'<img src="{img_path}">'  # already includes media/
 
-        if not word_de.strip() or not back_html.strip():
-            logger.error("empty fields", extra={"step": "anki.add_note"})
-            raise EmptyFieldsError("front or back is empty")
+        if not back_html.strip():
+            logger.error("empty fields", extra={"step": "lesson.make_card"})
+            raise EmptyFieldsError("back is empty")
 
         # 7) Добавляем карточку в Anki
         note_id = add_note(
